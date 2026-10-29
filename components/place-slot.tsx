@@ -32,7 +32,8 @@ export function PlaceSlot({ index, place, replacing, onPick, onWeather, onReplac
   return (
     <section
       aria-label={`Place ${index + 1}`}
-      className="flex min-h-72 flex-col gap-4 rounded-sm border border-dashed border-slate/50 p-5"
+      style={{ animationDelay: `${index * 80}ms` }}
+      className="animate-rise flex min-h-72 flex-col gap-4 rounded-2xl border-2 border-dashed border-slate/30 bg-white/40 p-5"
     >
       <div className="flex justify-end text-slate">
         <QuadrantMark index={index} />

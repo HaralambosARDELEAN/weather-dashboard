@@ -112,14 +112,14 @@ export function PlaceSearch({ onPick, onCancel, autoFocus }: Props) {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder="Search for a city or town"
-        className="mt-1 w-full rounded-sm border border-slate/60 bg-white px-3 py-2.5 text-base outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/25"
+        className="mt-1 w-full rounded-xl border border-slate/50 bg-white px-3 py-2.5 text-base outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/25"
       />
       {open && (
         <ul
           id={`${id}-list`}
           role="listbox"
           aria-label="Matching places"
-          className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-sm border-2 border-ink bg-white py-1 shadow-2xl shadow-ink/30"
+          className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-xl border-2 border-ink bg-white py-1 shadow-2xl shadow-ink/30"
         >
           {results.map((place, i) => (
             <li

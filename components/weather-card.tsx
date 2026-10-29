@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { callApi } from "@/lib/api-client";
 import { placeDetails } from "@/lib/format";
 import type { Place, Weather } from "@/lib/schemas";
-import { skyForWeather } from "@/lib/sky";
+import { skyForWeather, skyStyle } from "@/lib/sky";
 import { formatLocalTime } from "@/lib/time";
 import { describeWeather } from "@/lib/weather-codes";
 import { QuadrantMark } from "./quadrant-mark";
 import { useNow } from "./use-now";
+import { WeatherAmbience } from "./weather-ambience";
 import { WeatherSymbol } from "./weather-symbol";
+
+const ACTION =
+  "rounded-full border border-current/30 bg-current/5 px-4 py-1.5 font-bold transition-colors hover:bg-current/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current";
 
 type Props = {
   index: number;
@@ -51,10 +55,15 @@ export function WeatherCard({ index, place, onWeather, onReplace, onRemove }: Pr
   return (
     <article
       aria-label={place.name}
-      style={sky ? { backgroundColor: sky.background, color: sky.text } : undefined}
-      className="flex min-h-72 flex-col rounded-sm border border-mist bg-white p-5 transition-colors duration-700"
+      style={{
+        animationDelay: `${index * 80}ms`,
+        ...(sky ? skyStyle(sky) : {}),
+      }}
+      className="animate-rise relative flex min-h-72 flex-col overflow-hidden rounded-2xl border border-ink/5 bg-white p-5 shadow-lg shadow-ink/10"
     >
-      <div className="flex items-start justify-between gap-3">
+      {weather && <WeatherAmbience code={weather.weatherCode} isDay={weather.isDay} />}
+
+      <div className="relative flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-3xl font-extrabold uppercase leading-none">{place.name}</h2>
           <p className="mt-1 text-sm opacity-80">{placeDetails(place)}</p>
@@ -62,34 +71,39 @@ export function WeatherCard({ index, place, onWeather, onReplace, onRemove }: Pr
         <QuadrantMark index={index} />
       </div>
 
-      <div className="mt-auto pt-6" aria-live="polite">
+      <div className="relative mt-auto pt-6" aria-live="polite">
         {load.status === "loading" && <p className="text-sm opacity-80">Loading the weather…</p>}
         {load.status === "error" && (
           <div role="alert">
             <p className="text-sm font-bold">{load.message}</p>
-            <button type="button" onClick={retry} className="mt-2 text-sm underline underline-offset-4">
+            <button type="button" onClick={retry} className={`mt-3 text-sm ${ACTION}`}>
               Try again
             </button>
           </div>
         )}
         {weather && (
           <>
-            <p className="font-display text-7xl font-extrabold leading-none">
-              {Math.round(weather.temperature)}
-              <span className="text-4xl">°C</span>
-            </p>
-            <p className="mt-2 flex items-center gap-2 text-lg">
-              <WeatherSymbol code={weather.weatherCode} className="size-6 shrink-0" />
+            <div className="flex items-end justify-between gap-3">
+              <p className="font-display text-7xl font-extrabold leading-none">
+                {Math.round(weather.temperature)}
+                <span className="ml-0.5 align-top text-3xl font-bold">°C</span>
+              </p>
+              <WeatherSymbol code={weather.weatherCode} className="mb-1 size-14 shrink-0" />
+            </div>
+            <p className="mt-2 text-lg">
               {describeWeather(weather.weatherCode).label}
+              {/* Day or night in words too, not only through the card colour. */}
+              <span className="opacity-80"> · {weather.isDay ? "Day" : "Night"}</span>
             </p>
             <dl className="mt-4 font-mono text-sm">
               {[
+                ["Local time", formatLocalTime(timezone, now)],
                 ["Wind", `${Math.round(weather.windSpeed)} km/h`],
                 ["Today's high", `${Math.round(weather.high)}°C`],
                 ["Today's low", `${Math.round(weather.low)}°C`],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-3 border-b border-current/15 py-1 last:border-b-0">
-                  <dt className="opacity-70">{label}</dt>
+                  <dt className="opacity-80">{label}</dt>
                   <dd>{value}</dd>
                 </div>
               ))}
@@ -98,16 +112,21 @@ export function WeatherCard({ index, place, onWeather, onReplace, onRemove }: Pr
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-current/20 pt-3 text-sm">
+      <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-current/20 pt-3 text-sm">
+        {/* While the weather loads or fails, the local time still shows here. */}
         <p className="font-mono">
-          <span className="block opacity-70">Local time</span>
-          <time>{formatLocalTime(timezone, now)}</time>
+          {!weather && (
+            <>
+              <span className="opacity-80">Local time </span>
+              {formatLocalTime(timezone, now)}
+            </>
+          )}
         </p>
-        <div className="flex gap-4">
-          <button type="button" onClick={onReplace} className="underline-offset-4 hover:underline">
+        <div className="flex gap-2">
+          <button type="button" onClick={onReplace} className={ACTION} aria-label={`Replace ${place.name}`}>
             Replace
           </button>
-          <button type="button" onClick={onRemove} className="underline-offset-4 hover:underline">
+          <button type="button" onClick={onRemove} className={ACTION} aria-label={`Remove ${place.name}`}>
             Remove
           </button>
         </div>

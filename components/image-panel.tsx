@@ -1,12 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { callApi } from "@/lib/api-client";
-import { listNames } from "@/lib/format";
 import type { Place, Weather } from "@/lib/schemas";
+import { skyForWeather } from "@/lib/sky";
 import { SLOT_COUNT, type Slots } from "@/lib/storage";
+import { PictureLightbox, WHOLE, type View } from "./picture-lightbox";
 import { PicturePreview } from "./picture-preview";
+import { PictureView } from "./picture-view";
+import { PromptText } from "./prompt-text";
 import { useNow } from "./use-now";
 
 type Props = {
@@ -14,12 +16,15 @@ type Props = {
   weather: Readonly<Record<number, Weather>>;
 };
 
-type Picture = { image: string; prompt: string; placeIds: string; names: string[] };
+type Picture = { image: string; prompt: string; placeIds: string; names: string[]; createdAt: number };
 
 type Run =
   | { status: "idle" }
   | { status: "loading"; startedAt: number }
   | { status: "error"; message: string; prompt?: string };
+
+const LINK =
+  "rounded-full border border-ink/20 px-4 py-1.5 text-sm font-bold transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
 function Elapsed({ startedAt }: { startedAt: number }) {
   const now = useNow(1_000);
@@ -29,12 +34,17 @@ function Elapsed({ startedAt }: { startedAt: number }) {
 export function ImagePanel({ slots, weather }: Props) {
   const [run, setRun] = useState<Run>({ status: "idle" });
   const [picture, setPicture] = useState<Picture | null>(null);
+  const [view, setView] = useState<View>(null);
+  const now = useNow(60_000);
 
   const places = slots.filter((place): place is Place => place !== null);
   const missing = SLOT_COUNT - places.length;
   const placeIds = slots.map((place) => place?.id ?? "-").join(",");
   const outdated = picture !== null && picture.placeIds !== placeIds;
   const loading = run.status === "loading";
+  const skies = slots.map((place) =>
+    place && weather[place.id] ? skyForWeather(weather[place.id], place.timezone, now) : null,
+  );
 
   async function generate() {
     setRun({ status: "loading", startedAt: Date.now() });
@@ -49,7 +59,7 @@ export function ImagePanel({ slots, weather }: Props) {
       setRun({ status: "error", message, prompt: result.prompt });
       return;
     }
-    setPicture({ ...result.data, placeIds, names: places.map((place) => place.name) });
+    setPicture({ ...result.data, placeIds, names: places.map((place) => place.name), createdAt: Date.now() });
     setRun({ status: "idle" });
   }
 
@@ -58,8 +68,11 @@ export function ImagePanel({ slots, weather }: Props) {
   else if (loading) label = "Painting…";
   else if (picture && !outdated) label = "Generate again";
 
+  // While a new picture is painted, the preview pulses in place of the old one.
+  const showPicture = picture !== null && !loading;
+
   return (
-    <section aria-labelledby="picture-heading" className="flex flex-col gap-4">
+    <section aria-labelledby="picture-heading" className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="picture-heading" className="font-display text-4xl font-extrabold uppercase leading-none">
           The picture
@@ -68,7 +81,7 @@ export function ImagePanel({ slots, weather }: Props) {
           type="button"
           onClick={generate}
           disabled={missing > 0 || loading}
-          className="rounded-sm bg-windsock px-5 py-3 font-bold text-white transition-opacity hover:bg-windsock/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-windsock px-6 py-3 font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {label}
         </button>
@@ -88,26 +101,33 @@ export function ImagePanel({ slots, weather }: Props) {
         {outdated && !loading && <p>This picture shows the previous places. Generate again to update it.</p>}
       </div>
 
-      {picture ? (
+      {showPicture ? (
         <figure className="flex flex-col gap-4">
-          <Image
-            src={picture.image}
-            alt={`AI-generated picture of the weather in ${listNames(picture.names)}`}
-            width={1024}
-            height={1024}
-            unoptimized
-            className={`h-auto w-full rounded-sm border border-mist transition-opacity ${outdated ? "opacity-60" : ""}`}
+          <PictureView
+            key={picture.createdAt}
+            image={picture.image}
+            names={picture.names}
+            skies={skies}
+            outdated={outdated}
+            onOpen={setView}
           />
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="mr-auto text-sm text-slate">Click a panel to open it large.</p>
+            <button type="button" className={LINK} onClick={() => setView(WHOLE)}>
+              Open whole picture
+            </button>
+            <a className={LINK} href={picture.image} download="weather-in-four-places.webp">
+              Download
+            </a>
+          </div>
           <figcaption>
-            <h3 className="text-sm font-bold">Prompt sent to the image model</h3>
-            <pre className="mt-2 whitespace-pre-wrap rounded-sm border border-mist bg-white p-4 font-mono text-xs leading-relaxed">
-              {picture.prompt}
-            </pre>
+            <PromptText prompt={picture.prompt} />
           </figcaption>
+          <PictureLightbox image={picture.image} names={picture.names} prompt={picture.prompt} view={view} onView={setView} />
         </figure>
       ) : (
         <>
-          <PicturePreview slots={slots} weather={weather} />
+          <PicturePreview slots={slots} weather={weather} painting={loading} />
           <p className="text-sm text-slate">
             {missing > 0
               ? "This is how the places will sit in the picture. Add all four to paint it."
@@ -119,9 +139,9 @@ export function ImagePanel({ slots, weather }: Props) {
       {run.status === "error" && run.prompt && (
         <details className="text-sm">
           <summary className="cursor-pointer">Prompt that was sent</summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-sm border border-mist bg-white p-4 font-mono text-xs">
-            {run.prompt}
-          </pre>
+          <div className="mt-2">
+            <PromptText prompt={run.prompt} />
+          </div>
         </details>
       )}
     </section>

@@ -20,7 +20,7 @@ export function Dashboard() {
     return (
       <div aria-busy="true" className="grid gap-4 sm:grid-cols-2 lg:w-1/2">
         {Array.from({ length: SLOT_COUNT }, (_, i) => (
-          <div key={i} className="min-h-72 rounded-sm border border-dashed border-slate/50" />
+          <div key={i} className="min-h-72 rounded-2xl border-2 border-dashed border-slate/30" />
         ))}
       </div>
     );
