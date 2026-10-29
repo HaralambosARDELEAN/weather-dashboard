@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { callApi } from "@/lib/api-client";
 import { placeDetails } from "@/lib/format";
 import type { Place, Weather } from "@/lib/schemas";
-import { formatLocalTime } from "@/lib/time";
+import { skyFor } from "@/lib/sky";
+import { formatLocalTime, localHour } from "@/lib/time";
 import { describeWeather } from "@/lib/weather-codes";
 import { QuadrantMark } from "./quadrant-mark";
 import { useNow } from "./use-now";
@@ -42,9 +43,14 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
 
   const weather = load.status === "done" ? load.weather : null;
   const description = weather ? describeWeather(weather.weatherCode) : null;
+  const sky = weather && description ? skyFor(description.kind, weather.isDay, localHour(timezone, now)) : null;
 
   return (
-    <article aria-label={place.name} className="flex min-h-72 flex-col rounded-sm border border-mist bg-white p-5">
+    <article
+      aria-label={place.name}
+      style={sky ? { backgroundColor: sky.background, color: sky.text } : undefined}
+      className="flex min-h-72 flex-col rounded-sm border border-mist bg-white p-5 transition-colors duration-700"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-3xl font-extrabold uppercase leading-none">{place.name}</h2>
@@ -70,19 +76,17 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
               <span className="text-4xl">°C</span>
             </p>
             <p className="mt-1 text-lg">{description.label}</p>
-            <dl className="mt-4 grid grid-cols-3 gap-2 font-mono text-sm">
-              <div>
-                <dt className="opacity-70">Wind</dt>
-                <dd>{Math.round(weather.windSpeed)} km/h</dd>
-              </div>
-              <div>
-                <dt className="opacity-70">High</dt>
-                <dd>{Math.round(weather.high)}°C</dd>
-              </div>
-              <div>
-                <dt className="opacity-70">Low</dt>
-                <dd>{Math.round(weather.low)}°C</dd>
-              </div>
+            <dl className="mt-4 font-mono text-sm">
+              {[
+                ["Wind", `${Math.round(weather.windSpeed)} km/h`],
+                ["Today's high", `${Math.round(weather.high)}°C`],
+                ["Today's low", `${Math.round(weather.low)}°C`],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-3 border-b border-current/15 py-1 last:border-b-0">
+                  <dt className="opacity-70">{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
             </dl>
           </>
         )}
