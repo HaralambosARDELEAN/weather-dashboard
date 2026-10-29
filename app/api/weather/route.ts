@@ -9,8 +9,10 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request) {
+  // Read the request before the try block: Next.js signals "this route is dynamic"
+  // by throwing here during the build, and that signal must not be caught.
+  const query = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   try {
-    const query = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
     if (!query.success) throw new ApiError("The place in the request is not valid.", 400);
 
     const { lat, lon, tz } = query.data;
