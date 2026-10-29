@@ -24,7 +24,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable} antialiased`}>
+    // Browser extensions (themes, assistants) add attributes to <html> before React loads;
+    // this only ignores that mismatch on this one element, not in the rest of the page.
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable} ${mono.variable} antialiased`}
+      suppressHydrationWarning
+    >
       <body>{children}</body>
     </html>
   );
