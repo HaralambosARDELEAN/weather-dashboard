@@ -1,3 +1,5 @@
+import { Dashboard } from "@/components/dashboard";
+
 export default function Home() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12">
@@ -9,6 +11,7 @@ export default function Home() {
           Pick four places to see their weather right now, then turn it into one picture.
         </p>
       </header>
+      <Dashboard />
     </main>
   );
 }
