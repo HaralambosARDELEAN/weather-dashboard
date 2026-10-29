@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLocalTime, localHour, timeOfDay } from "@/lib/time";
+import { formatLocalTime, localHour, localMonth, timeOfDay } from "@/lib/time";
 
 // Friday 30 October 2026, 12:00 UTC
 const noonUtc = new Date("2026-10-30T12:00:00Z");
@@ -14,6 +14,12 @@ describe("local time", () => {
   it("returns the local hour", () => {
     expect(localHour("Asia/Tokyo", noonUtc)).toBe(21);
     expect(localHour("Pacific/Auckland", noonUtc)).toBe(1);
+  });
+
+  it("returns the local month", () => {
+    const newYearUtc = new Date("2026-12-31T23:30:00Z");
+    expect(localMonth("Europe/London", newYearUtc)).toBe(12);
+    expect(localMonth("Asia/Tokyo", newYearUtc)).toBe(1);
   });
 });
 

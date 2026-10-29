@@ -14,6 +14,11 @@ export function localHour(timezone: string, now: Date = new Date()): number {
   return Number(hour);
 }
 
+/** 1 to 12, in the place's own timezone. */
+export function localMonth(timezone: string, now: Date = new Date()): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: timezone, month: "numeric" }).format(now));
+}
+
 /** Daylight comes from the weather API (is_day), so polar days and nights are right too. */
 export function timeOfDay(hour: number, isDay: boolean): string {
   if (!isDay) return "at night";
