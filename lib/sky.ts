@@ -1,4 +1,6 @@
-import type { WeatherKind } from "./weather-codes";
+import type { Weather } from "./schemas";
+import { localHour } from "./time";
+import { describeWeather, type WeatherKind } from "./weather-codes";
 
 export type Sky = { background: string; text: string };
 
@@ -32,4 +34,9 @@ export function skyFor(kind: WeatherKind, isDay: boolean, hour: number): Sky {
   const sunIsLow = hour < 8 || hour >= 18;
   if (sunIsLow && (kind === "clear" || kind === "cloudy")) return LOW_SUN;
   return DAY[kind];
+}
+
+/** The sky for a place's current weather, at its local time. */
+export function skyForWeather(weather: Weather, timezone: string, now: Date): Sky {
+  return skyFor(describeWeather(weather.weatherCode).kind, weather.isDay, localHour(timezone, now));
 }

@@ -1,0 +1,43 @@
+"use client";
+
+import type { Weather } from "@/lib/schemas";
+import { skyForWeather } from "@/lib/sky";
+import type { Slots } from "@/lib/storage";
+import { useNow } from "./use-now";
+import { WeatherSymbol } from "./weather-symbol";
+
+type Props = {
+  slots: Slots;
+  weather: Readonly<Record<number, Weather>>;
+};
+
+/** The 2x2 layout of the picture before it is painted: each place in its panel, in its sky. */
+export function PicturePreview({ slots, weather }: Props) {
+  const now = useNow(60_000);
+  return (
+    <div className="grid aspect-square grid-cols-2 gap-1 rounded-sm border border-mist bg-white p-1">
+      {slots.map((place, i) => {
+        if (!place) {
+          return (
+            <div key={i} className="grid place-items-center rounded-xs border border-dashed border-slate/40 text-sm text-slate">
+              Empty panel
+            </div>
+          );
+        }
+        const current = weather[place.id];
+        const sky = current ? skyForWeather(current, place.timezone, now) : null;
+        return (
+          <div
+            key={i}
+            style={sky ? { backgroundColor: sky.background, color: sky.text } : undefined}
+            className="flex flex-col justify-end rounded-xs bg-haze p-4 transition-colors duration-700"
+          >
+            {current && <WeatherSymbol code={current.weatherCode} className="mb-auto size-8" />}
+            <p className="font-display text-2xl font-extrabold uppercase leading-none sm:text-3xl">{place.name}</p>
+            {current && <p className="mt-1 font-mono text-sm">{Math.round(current.temperature)}°C</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -4,26 +4,29 @@ import { useEffect, useState } from "react";
 import { callApi } from "@/lib/api-client";
 import { placeDetails } from "@/lib/format";
 import type { Place, Weather } from "@/lib/schemas";
-import { skyFor } from "@/lib/sky";
-import { formatLocalTime, localHour } from "@/lib/time";
+import { skyForWeather } from "@/lib/sky";
+import { formatLocalTime } from "@/lib/time";
 import { describeWeather } from "@/lib/weather-codes";
 import { QuadrantMark } from "./quadrant-mark";
 import { useNow } from "./use-now";
+import { WeatherSymbol } from "./weather-symbol";
 
 type Props = {
   index: number;
   place: Place;
+  /** Shares the loaded weather with the picture preview. */
+  onWeather: (placeId: number, weather: Weather) => void;
   onReplace: () => void;
   onRemove: () => void;
 };
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "done"; weather: Weather };
 
-export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
+export function WeatherCard({ index, place, onWeather, onReplace, onRemove }: Props) {
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const now = useNow(15_000);
-  const { latitude, longitude, timezone } = place;
+  const { id, latitude, longitude, timezone } = place;
 
   // Each card loads its own weather, so one failing place never blocks the others.
   useEffect(() => {
@@ -31,10 +34,11 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
     const params = new URLSearchParams({ lat: String(latitude), lon: String(longitude), tz: timezone });
     callApi<Weather>(`/api/weather?${params}`, { signal: controller.signal }).then((result) => {
       if (controller.signal.aborted) return;
+      if (result.ok) onWeather(id, result.data);
       setLoad(result.ok ? { status: "done", weather: result.data } : { status: "error", message: result.error });
     });
     return () => controller.abort();
-  }, [latitude, longitude, timezone, attempt]);
+  }, [id, latitude, longitude, timezone, attempt, onWeather]);
 
   function retry() {
     setLoad({ status: "loading" });
@@ -42,8 +46,7 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
   }
 
   const weather = load.status === "done" ? load.weather : null;
-  const description = weather ? describeWeather(weather.weatherCode) : null;
-  const sky = weather && description ? skyFor(description.kind, weather.isDay, localHour(timezone, now)) : null;
+  const sky = weather ? skyForWeather(weather, timezone, now) : null;
 
   return (
     <article
@@ -69,13 +72,16 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
             </button>
           </div>
         )}
-        {weather && description && (
+        {weather && (
           <>
             <p className="font-display text-7xl font-extrabold leading-none">
               {Math.round(weather.temperature)}
               <span className="text-4xl">°C</span>
             </p>
-            <p className="mt-1 text-lg">{description.label}</p>
+            <p className="mt-2 flex items-center gap-2 text-lg">
+              <WeatherSymbol code={weather.weatherCode} className="size-6 shrink-0" />
+              {describeWeather(weather.weatherCode).label}
+            </p>
             <dl className="mt-4 font-mono text-sm">
               {[
                 ["Wind", `${Math.round(weather.windSpeed)} km/h`],
@@ -95,7 +101,7 @@ export function WeatherCard({ index, place, onReplace, onRemove }: Props) {
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-current/20 pt-3 text-sm">
         <p className="font-mono">
           <span className="block opacity-70">Local time</span>
-          <time>{formatLocalTime(place.timezone, now)}</time>
+          <time>{formatLocalTime(timezone, now)}</time>
         </p>
         <div className="flex gap-4">
           <button type="button" onClick={onReplace} className="underline-offset-4 hover:underline">
