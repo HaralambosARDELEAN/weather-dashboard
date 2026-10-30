@@ -1,7 +1,7 @@
 import { placeLabel } from "./format";
 import type { Place, Weather } from "./schemas";
 import { localHour, localMonth, timeOfDay } from "./time";
-import { describeWeather } from "./weather-codes";
+import { describeWeather, type WeatherKind } from "./weather-codes";
 
 export const PANEL_POSITIONS = ["Top left", "Top right", "Bottom left", "Bottom right"] as const;
 
@@ -37,6 +37,13 @@ export function seasonAt(latitude: number, month: number): string | null {
   return NORTHERN_SEASONS[northernMonth - 1];
 }
 
+/** What the ground looks like. Said for every panel, because night scenes otherwise get wet streets by default. */
+function groundFor(kind: WeatherKind): string {
+  if (kind === "rain" || kind === "storm") return "wet ground and puddles";
+  if (kind === "snow") return "snow settling on the ground";
+  return "dry ground";
+}
+
 /**
  * The image prompt, built only from API data: one line per panel, in reading order.
  * The same text is shown to the user next to the picture.
@@ -48,14 +55,19 @@ export function buildPrompt(entries: PromptEntry[], now: Date = new Date()): str
   const panels = entries.map(({ place, weather }, i) => {
     const season = seasonAt(place.latitude, localMonth(place.timezone, now));
     const when = timeOfDay(localHour(place.timezone, now), weather.isDay) + (season ? ` in ${season}` : "");
-    const { scene } = describeWeather(weather.weatherCode);
+    const { scene, kind } = describeWeather(weather.weatherCode);
     const temperature = `${temperatureFeel(weather.temperature)} at ${Math.round(weather.temperature)}°C`;
-    return `${PANEL_POSITIONS[i]}: ${placeLabel(place)}, ${when}. Weather: ${scene}, ${temperature}, ${windFeel(weather.windSpeed)}.`;
+    return `${PANEL_POSITIONS[i]}: ${placeLabel(place)}, ${when}. Weather: ${scene}, ${temperature}, ${windFeel(weather.windSpeed)}; ${groundFor(kind)}.`;
   });
   return [
     "A square illustration split into a 2x2 grid of four equal panels, separated by thin white borders.",
     "Style: flat gouache travel-poster painting with soft paper grain. Keep the style the same in every panel, but let each panel's light and colour follow its own weather and time of day.",
-    "Each panel shows a recognisable street or landscape from the named place. Trees, flowers and light must match the season given for that panel:",
+    // Each rule below fixes a mistake seen in real images (cherry blossom in October, flowers at -43 °C,
+    // rain hardly visible, wet streets under a dry sky) or guards against a likely one
+    // (snow in a warm "winter", the Eiffel Tower in Paris, Texas).
+    "Each panel shows a recognisable street or landscape from the named place, as it really looks: do not use landmarks from other places with the same name.",
+    "Plants, snow and light must match both the season and the temperature given for that panel: no flowers or green leaves where it is below freezing, and no snow on the ground unless it is snowing or below freezing.",
+    "Make falling rain or snow clearly visible in the panels where it falls. Show wet ground only where it rains; everywhere else the ground is dry.",
     ...panels,
     "Write each place name in small, plain capital letters along the bottom edge of its panel. No other text or numbers.",
   ].join("\n");

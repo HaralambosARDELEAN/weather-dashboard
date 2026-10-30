@@ -31,10 +31,10 @@ describe("buildPrompt", () => {
   it("describes the four panels in reading order, with each place's own season", () => {
     const lines = prompt.split("\n").filter((line) => /^(Top|Bottom) (left|right):/.test(line));
     expect(lines).toEqual([
-      "Top left: Timișoara, Timiș, Romania, in the afternoon in autumn. Weather: light rain, cool at 12°C, a light breeze.",
-      "Top right: Tokyo, Japan, at night in autumn. Weather: a clear sky, cold at 8°C, a light breeze.",
-      "Bottom left: Cairo, Egypt, in the afternoon in autumn. Weather: a clear sky, warm at 31°C, still air.",
-      "Bottom right: Sydney, New South Wales, Australia, at night in spring. Weather: steady snowfall, freezing at -3°C, strong wind.",
+      "Top left: Timișoara, Timiș, Romania, in the afternoon in autumn. Weather: light rain falling, with visible streaks of rain, cool at 12°C, a light breeze; wet ground and puddles.",
+      "Top right: Tokyo, Japan, at night in autumn. Weather: a clear sky, cold at 8°C, a light breeze; dry ground.",
+      "Bottom left: Cairo, Egypt, in the afternoon in autumn. Weather: a clear sky, warm at 31°C, still air; dry ground.",
+      "Bottom right: Sydney, New South Wales, Australia, at night in spring. Weather: steady snowfall, with flakes clearly visible in the air, freezing at -3°C, strong wind; snow settling on the ground.",
     ]);
   });
 
@@ -44,10 +44,27 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("season");
   });
 
+  it("keeps flowers out of panels below freezing", () => {
+    expect(prompt).toContain("no flowers or green leaves where it is below freezing");
+  });
+
+  it("keeps snow off the ground unless it snows or freezes", () => {
+    expect(prompt).toContain("no snow on the ground unless it is snowing or below freezing");
+  });
+
+  it("shows falling rain and snow clearly, and wet ground only where it rains", () => {
+    expect(prompt).toContain("Make falling rain or snow clearly visible in the panels where it falls");
+    expect(prompt).toContain("Show wet ground only where it rains");
+  });
+
+  it("does not borrow landmarks from places with the same name", () => {
+    expect(prompt).toContain("do not use landmarks from other places with the same name");
+  });
+
   it("leaves the season out near the equator", () => {
     const tropical = [...entries.slice(0, 3), entry("Singapore", null, "Singapore", "Asia/Singapore", 1.35, { isDay: false })];
     const line = buildPrompt(tropical, noonUtc).split("\n").find((l) => l.startsWith("Bottom right:"));
-    expect(line).toBe("Bottom right: Singapore, at night. Weather: a clear sky, cool at 12°C, a light breeze.");
+    expect(line).toBe("Bottom right: Singapore, at night. Weather: a clear sky, cool at 12°C, a light breeze; dry ground.");
   });
 
   it("needs exactly four places", () => {
