@@ -13,6 +13,13 @@ export function placeLabel(place: Named): string {
   return details ? `${place.name}, ${details}` : place.name;
 }
 
+/** Long place names get a smaller size so they fit on one line of a card. */
+export function nameSize(name: string): "large" | "medium" | "small" {
+  if (name.length <= 12) return "large";
+  if (name.length <= 17) return "medium";
+  return "small";
+}
+
 export function listNames(names: string[]): string {
   if (names.length < 2) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { callApi } from "@/lib/api-client";
 import { placeDetails } from "@/lib/format";
 import type { Place } from "@/lib/schemas";
@@ -27,6 +27,12 @@ export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
   const [pickError, setPickError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const id = useId();
+  const input = useRef<HTMLInputElement>(null);
+
+  // autoFocus only works when the box first appears; this also moves the focus to a box already on screen.
+  useEffect(() => {
+    if (autoFocus) input.current?.focus();
+  }, [autoFocus]);
 
   // Search 300 ms after the last keystroke; an older search still running is cancelled.
   useEffect(() => {
@@ -98,6 +104,7 @@ export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
         Add a place
       </label>
       <input
+        ref={input}
         id={`${id}-input`}
         type="text"
         role="combobox"

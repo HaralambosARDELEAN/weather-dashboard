@@ -11,6 +11,8 @@ type Props = {
   replacing: boolean;
   /** The very first slot of an empty dashboard gets the focus and a suggestion. */
   first?: boolean;
+  /** Move the keyboard focus to this slot's search box. */
+  focus?: boolean;
   onPick: (place: Place) => string | null;
   onWeather: (placeId: number, weather: Weather) => void;
   onReplace: () => void;
@@ -18,7 +20,7 @@ type Props = {
   onRemove: () => void;
 };
 
-export function PlaceSlot({ index, place, replacing, first, onPick, onWeather, onReplace, onCancel, onRemove }: Props) {
+export function PlaceSlot({ index, place, replacing, first, focus, onPick, onWeather, onReplace, onCancel, onRemove }: Props) {
   if (place && !replacing) {
     return (
       <WeatherCard
@@ -43,7 +45,7 @@ export function PlaceSlot({ index, place, replacing, first, onPick, onWeather, o
       <PlaceSearch
         onPick={onPick}
         onCancel={place ? onCancel : undefined}
-        autoFocus={replacing || first}
+        autoFocus={replacing || first || focus}
         hint={first ? "Try Springfield: there is more than one." : undefined}
       />
     </section>

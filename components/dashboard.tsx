@@ -9,6 +9,8 @@ import { PlaceSlot } from "./place-slot";
 export function Dashboard() {
   const slots = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [replacing, setReplacing] = useState<number | null>(null);
+  // After a place is added, the keyboard focus moves on to the next empty search box.
+  const [focusSlot, setFocusSlot] = useState<number | null>(null);
   // Weather loaded by the cards, by place id, so the picture preview can use the same skies.
   const [weather, setWeather] = useState<Readonly<Record<number, Weather>>>({});
   const shareWeather = useCallback((placeId: number, next: Weather) => {
@@ -31,8 +33,11 @@ export function Dashboard() {
     if (current.some((other, i) => other?.id === place.id && i !== index)) {
       return `${place.name} is already on the dashboard.`;
     }
-    updateSlots(current.map((other, i) => (i === index ? place : other)));
+    const next = current.map((other, i) => (i === index ? place : other));
+    updateSlots(next);
     setReplacing(null);
+    const nextEmpty = next.findIndex((other) => other === null);
+    setFocusSlot(nextEmpty === -1 ? null : nextEmpty);
     return null;
   }
 
@@ -51,6 +56,7 @@ export function Dashboard() {
             place={place}
             replacing={replacing === index}
             first={index === 0 && current.every((other) => other === null)}
+            focus={focusSlot === index}
             onPick={(next) => pick(index, next)}
             onWeather={shareWeather}
             onReplace={() => setReplacing(index)}

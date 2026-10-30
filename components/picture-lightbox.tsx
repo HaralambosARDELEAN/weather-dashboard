@@ -47,7 +47,7 @@ export function PictureLightbox({ image, names, prompt, view, onView }: Props) {
       onClose={() => onView(null)}
       onKeyDown={keyDown}
       onClick={(event) => event.target === event.currentTarget && onView(null)}
-      className="m-auto max-h-none max-w-none bg-transparent p-4 text-haze backdrop:bg-ink/95 backdrop:backdrop-blur-sm"
+      className="m-auto max-h-none max-w-none rounded-3xl bg-ink p-4 text-haze backdrop:bg-ink/95 backdrop:backdrop-blur-sm"
     >
       {view !== null && (
         <div key={view} className="animate-zoom-in flex w-[min(74vh,92vw)] flex-col gap-4">

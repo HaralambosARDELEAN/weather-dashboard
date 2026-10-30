@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { callApi } from "@/lib/api-client";
-import { placeDetails } from "@/lib/format";
+import { nameSize, placeDetails } from "@/lib/format";
 import type { Place, Weather } from "@/lib/schemas";
 import { skyForWeather, skyStyle, temperatureEffect } from "@/lib/sky";
 import { formatLocalTime } from "@/lib/time";
@@ -12,6 +12,8 @@ import { FrostEdge } from "./frost-edge";
 import { useNow } from "./use-now";
 import { WeatherAmbience } from "./weather-ambience";
 import { WeatherIcon } from "./weather-icon";
+
+const CARD_NAME = { large: "text-3xl", medium: "text-2xl", small: "text-xl" } as const;
 
 const ACTION =
   "rounded-full border border-current/30 bg-current/5 px-4 py-1.5 font-bold transition-colors hover:bg-current/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current";
@@ -71,7 +73,7 @@ export function WeatherCard({ index, place, onWeather, onReplace, onRemove }: Pr
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-3xl font-extrabold uppercase leading-none break-words">{place.name}</h2>
+          <h2 className={`font-display font-extrabold uppercase leading-none break-words ${CARD_NAME[nameSize(place.name)]}`}>{place.name}</h2>
           <p className="mt-1 text-sm opacity-80">{placeDetails(place)}</p>
         </div>
         <QuadrantMark index={index} />

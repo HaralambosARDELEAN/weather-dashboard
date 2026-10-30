@@ -1,11 +1,14 @@
 "use client";
 
+import { nameSize } from "@/lib/format";
 import type { Weather } from "@/lib/schemas";
 import { skyForWeather, skyStyle } from "@/lib/sky";
 import type { Slots } from "@/lib/storage";
 import { useNow } from "./use-now";
 import { WeatherAmbience } from "./weather-ambience";
 import { WeatherIcon } from "./weather-icon";
+
+const TILE_NAME = { large: "text-2xl sm:text-3xl", medium: "text-xl sm:text-2xl", small: "text-lg sm:text-xl" } as const;
 
 type Props = {
   slots: Slots;
@@ -45,7 +48,7 @@ export function PicturePreview({ slots, weather, painting }: Props) {
           >
             {current && <WeatherAmbience code={current.weatherCode} isDay={current.isDay} />}
             {current && <WeatherIcon code={current.weatherCode} isDay={current.isDay} className="relative -ml-1 mb-auto size-16" />}
-            <p className="relative font-display text-2xl font-extrabold uppercase leading-none break-words sm:text-3xl">{place.name}</p>
+            <p className={`relative font-display font-extrabold uppercase leading-none break-words ${TILE_NAME[nameSize(place.name)]}`}>{place.name}</p>
             {current && <p className="relative mt-1 font-mono text-sm">{Math.round(current.temperature)}°C</p>}
           </div>
         );

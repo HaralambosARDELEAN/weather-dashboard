@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listNames, placeDetails, placeLabel } from "@/lib/format";
+import { listNames, nameSize, placeDetails, placeLabel } from "@/lib/format";
 
 describe("place formatting", () => {
   it("shows region and country", () => {
@@ -15,6 +15,14 @@ describe("place formatting", () => {
   it("copes with a missing region", () => {
     expect(placeLabel({ name: "Oslo", region: null, country: "Norway" })).toBe("Oslo, Norway");
     expect(placeLabel({ name: "Monaco", region: null, country: "Monaco" })).toBe("Monaco");
+  });
+});
+
+describe("nameSize", () => {
+  it("shrinks long names", () => {
+    expect(nameSize("Tokyo")).toBe("large");
+    expect(nameSize("Ho Chi Minh City")).toBe("medium");
+    expect(nameSize("Llanfairpwllgwyngyll")).toBe("small");
   });
 });
 
