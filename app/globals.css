@@ -2495,6 +2495,17 @@ button {
   .pic.pic-large {
     aspect-ratio: 4 / 5;
   }
+  /* The picture is taller than wide here, so its quadrant of the painting fills the height and is cropped at the sides. */
+  .pic-large .pic-painted > i {
+    right: auto;
+    left: 50%;
+    height: calc(100% + 6cqw);
+    translate: -50% 0;
+  }
+  /* Painting from the sticky bar scrolls here: a little room above the picture. */
+  .big {
+    scroll-margin-top: 16px;
+  }
   .pic-large .name {
     font-size: 40px;
   }

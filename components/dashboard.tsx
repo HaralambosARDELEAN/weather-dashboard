@@ -244,10 +244,10 @@ function Desk({ current }: { current: Slots }) {
     notify({ text: "Painted.", undo: null, focusSlot: null, focus: false });
   }
 
-  /** The phone's sticky bar: bring the big card into view, then paint. */
+  /** The phone's sticky bar: bring the big card's picture into view, where the painting appears, then paint. */
   function paintFromBar() {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    paintButton.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    paintButton.current?.closest(".big")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     paintButton.current?.focus({ preventScroll: true });
     void paint();
   }
