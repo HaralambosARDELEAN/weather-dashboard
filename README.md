@@ -21,13 +21,13 @@ Put your key in `.env` (`OPENAI_API_KEY=...`), then:
 npm run dev                 # open http://localhost:3000
 ```
 
-Tests: `npm test` (no network or key needed). Production build: `npm run build && npm start`.
+Tests: `npm test` (no network or key needed). Production build: `npm run build && npm start`. On every push, GitHub Actions runs the lint, type check, tests and build ([`ci.yml`](.github/workflows/ci.yml)).
 
 The key is read only on the server and never sent to the browser. Without a key, the dashboard works and the picture panel says the key is missing.
 
 ## Choices
 
-**Weather: [Open-Meteo](https://open-meteo.com/).** No key, and its geocoding returns region and country, which is what tells the many Springfields apart. Weather is requested in °C and km/h and in each place's own timezone, so "today's high and low" is that place's today.
+**Weather: [Open-Meteo](https://open-meteo.com/).** No key, and its geocoding returns region and country, which is what tells the many Springfields apart. Weather is requested in °C and km/h and in each place's own timezone, so "today's high and low" is that place's today. Its free API is for non-commercial use only; a client project would need one of their paid plans.
 
 **Image model: OpenAI `gpt-image-2.5-flare`.** OpenAI's fast image model: a picture takes about 15–20 seconds and handles four labelled panels well. The model can be changed in `.env` (`OPENAI_IMAGE_MODEL`) without touching code. I first planned for `gpt-image-1`, but OpenAI shut it down on 23 October 2026.
 
@@ -37,6 +37,7 @@ How it fits together:
 
 - The browser sends only the four place IDs to `/api/image`. The server looks up each place and its weather itself and builds the prompt, so every number in the prompt comes from the weather API and nothing can be injected from the browser.
 - Every outside answer is checked with zod. Every outside call has a timeout (8 s for Open-Meteo, 90 s for the image model), and Open-Meteo is tried again when it is busy.
+- No personal data is collected. The four places are saved only in the browser (localStorage), there are no accounts or cookies, and the fonts are served by the app itself, not by Google. Open-Meteo and OpenAI are called only from the server, so they never see the visitor's IP address.
 - Failures stay local: a place that does not exist, a card whose weather does not load (with Try again), an image model that times out, refuses or has no credit. Each shows a clear message, and the rest of the dashboard keeps working.
 
 ## What does not work yet
@@ -46,11 +47,19 @@ How it fits together:
 - The prompt rules reduce the model's mistakes but do not remove them. For example, Cairo sometimes gets autumn leaves it would not have.
 - There is no limit on how often the picture can be generated, so anyone using a running copy can spend the key's credit.
 
-With one more day I would use Open-Meteo's sunrise and sunset times for the sky colour, add end-to-end tests (search, generate, failures) with Playwright in CI, cache the weather on the server for a few minutes, keep the last picture, and add a rate limit to `/api/image`.
+## With one more day
+
+In this order:
+
+1. **A rate limit on `/api/image`.** Every picture costs money, and anyone who can open a running copy can spend the key's credit.
+2. **End-to-end tests with Playwright, added to the CI:** search, generate and the failure messages, in a real browser. The current tests cover the logic and the API routes, not the page.
+3. **Weather cached on the server for a few minutes:** fewer calls to Open-Meteo and faster reloads.
+4. **Real sunrise and sunset** from Open-Meteo for the "low sun" colour, instead of the clock.
+5. **Keep the last picture** after a reload.
 
 ## How I used AI
 
-I built this with **Claude Code** (Anthropic's coding agent, model Claude Opus 5.5). I gave it the brief and my stack choice, and we planned the design together before any code. It wrote most of the code and tests. I checked every step in the browser before each commit and asked for changes when something was wrong.
+I built this with **Claude Code** (Anthropic's coding agent, model Claude Opus 5.5). I gave it the brief; we chose the stack and planned the design together before any code. It wrote most of the code and tests. I checked every step in the browser before each commit and asked for changes when something was wrong.
 
 What I changed or threw away:
 
