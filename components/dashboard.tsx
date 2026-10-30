@@ -11,6 +11,7 @@ import type { Place, Weather } from "@/lib/schemas";
 import { SLOT_COUNT, getServerSnapshot, getSnapshot, subscribe, updateSlots, type Slots } from "@/lib/storage";
 import { AppHeader, SearchShell } from "./app-header";
 import { BigCard } from "./big-card";
+import { CardDots } from "./card-dots";
 import { PaintButton } from "./paint-button";
 import { PictureLightbox, WHOLE, type View } from "./picture-lightbox";
 import { PostcardDialog } from "./postcard-dialog";
@@ -50,6 +51,9 @@ function Desk({ current }: { current: Slots }) {
   const [pending, setPending] = useState<Place | null>(null);
   const [focusKey, setFocusKey] = useState(0);
   const [focusCard, setFocusCard] = useState<{ index: number; key: number } | null>(null);
+  // On a phone the postcards are swiped; which one is in view.
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(0);
   const [loads, setLoads] = useState<Readonly<Record<number, PlaceLoad>>>({});
   const [attempts, setAttempts] = useState<Readonly<Record<number, number>>>({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -322,7 +326,16 @@ function Desk({ current }: { current: Slots }) {
           )}
 
           {/* One copy of the painting serves all four cards; each shows its own quadrant. */}
-          <div className="cards" style={paintingUrl ? ({ "--painting": paintingUrl } as CSSProperties) : undefined}>
+          <div
+            ref={cardsRef}
+            className="cards"
+            style={paintingUrl ? ({ "--painting": paintingUrl } as CSSProperties) : undefined}
+            onScroll={(event) => {
+              const row = event.currentTarget;
+              const range = row.scrollWidth - row.clientWidth;
+              setShown(range > 0 ? Math.round((row.scrollLeft / range) * (current.length - 1)) : 0);
+            }}
+          >
             {current.map((place, index) =>
               place ? (
                 <Postcard
@@ -362,6 +375,7 @@ function Desk({ current }: { current: Slots }) {
               ),
             )}
           </div>
+          <CardDots slots={current} shown={shown} cards={cardsRef} />
         </section>
 
         <BigCard

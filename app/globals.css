@@ -529,6 +529,10 @@ button {
     align-items: start;
     padding: 6px 4px 0;
   }
+  /* Only on a phone, where the postcards are swiped. */
+  .card-dots {
+    display: none;
+  }
   .pc {
     --rot: 0deg;
     position: relative;
@@ -2294,10 +2298,51 @@ button {
   }
 
 
+  /* On a phone the postcards sit side by side: swipe between them, and the next one peeks in at the edge. */
   .cards {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 34px;
-    padding: 0 4px;
+    display: flex;
+    gap: 14px;
+    margin-inline: -16px;
+    padding: 16px 8vw 22px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .cards::-webkit-scrollbar {
+    display: none;
+  }
+  .cards > * {
+    flex: 0 0 84vw;
+    scroll-snap-align: center;
+  }
+  .card-dots {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+  }
+  .card-dots button {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .card-dots button::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 5px;
+    background: rgb(255 255 255 / 0.45);
+    transition: width 0.2s, background-color 0.2s;
+  }
+  .card-dots button[aria-current="true"]::before {
+    width: 24px;
+    background: var(--c);
+    box-shadow: 0 0 0 2px #fff;
   }
   .pc:nth-child(n) {
     margin-top: 0;
