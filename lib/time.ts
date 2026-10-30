@@ -1,11 +1,11 @@
-/** "Fri 19:40" in the place's own timezone. */
+/** "Fri 7:40 PM" in the place's own timezone. */
 export function formatLocalTime(timezone: string, now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     weekday: "short",
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
-    hourCycle: "h23",
+    hour12: true,
   }).format(now);
 }
 

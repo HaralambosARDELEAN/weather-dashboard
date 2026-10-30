@@ -5,10 +5,12 @@ import { formatLocalTime, localHour, localMonth, timeOfDay } from "@/lib/time";
 const noonUtc = new Date("2026-10-30T12:00:00Z");
 
 describe("local time", () => {
-  it("formats the time in the place's timezone", () => {
-    expect(formatLocalTime("Europe/Bucharest", noonUtc)).toBe("Fri 14:00");
-    expect(formatLocalTime("Asia/Tokyo", noonUtc)).toBe("Fri 21:00");
-    expect(formatLocalTime("America/Chicago", noonUtc)).toBe("Fri 07:00");
+  it("formats the time in the place's timezone, with AM and PM", () => {
+    // Intl puts a narrow no-break space before AM/PM; compare with plain spaces.
+    const time = (timezone: string) => formatLocalTime(timezone, noonUtc).replace(/\s/g, " ");
+    expect(time("Europe/Bucharest")).toBe("Fri 2:00 PM");
+    expect(time("Asia/Tokyo")).toBe("Fri 9:00 PM");
+    expect(time("America/Chicago")).toBe("Fri 7:00 AM");
   });
 
   it("returns the local hour", () => {
