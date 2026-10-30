@@ -29,6 +29,7 @@ The key is read only on the server and never sent to the browser. Without a key,
 
 - **Search any city or town**, or start with a ready-made set: four time zones around the clock, four places called Paris, or four very different climates.
 - **Each place is a postcard.** The front is a live sky: day, dawn, dusk or night from the place's real sunrise and sunset, and the weather on top of it. Light drizzle, rain and a downpour look different, as do light and heavy snow, fog and storms; the wind tilts the rain; frost edges the card below 0 °C and heat glows above 30 °C. The back has the temperature on a stamp, the local time on a postmark, the wind, today's high and low, and the next sunrise or sunset.
+- **On a phone, swipe between the postcards**; the dots underneath show which one is in view.
 - **Pick up a postcard** to read it large. Replace or remove one (with Undo); the desk keeps the four places in the browser.
 - **The weather stays current:** a card older than 15 minutes is refreshed, checked every minute and when you come back to the tab.
 - **Paint the picture** (the airmail button): it shows how long it has been painting, and Cancel if it takes longer than usual. The painting goes on the big card "Greetings from", each postcard shows its quadrant, and the painting can be opened large or downloaded.
