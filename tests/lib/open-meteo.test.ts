@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getPlace, getWeather, searchPlaces } from "@/lib/open-meteo";
-import { forecast, geoResult, json, mockFetch, timeoutError } from "../helpers";
+import { forecast, geoResult, json, mockFetch, SUN, timeoutError } from "../helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -96,7 +96,7 @@ describe("getPlace", () => {
 describe("getWeather", () => {
   const place = { latitude: 45.75, longitude: 21.23, timezone: "Europe/Bucharest" };
 
-  it("maps the forecast to weather", async () => {
+  it("maps the forecast to weather, with today's high and low", async () => {
     mockFetch(() => json(forecast()));
     await expect(getWeather(place)).resolves.toEqual({
       temperature: 11.7,
@@ -105,16 +105,29 @@ describe("getWeather", () => {
       isDay: true,
       high: 15.9,
       low: 8.2,
+      sun: SUN,
     });
   });
 
-  it("asks for Celsius, km/h and the place's own day", async () => {
+  it("asks for Celsius, km/h, the place's own day and three days of sunrise and sunset", async () => {
     const fake = mockFetch(() => json(forecast()));
     await getWeather(place);
     const url = new URL(String(fake.mock.calls[0][0]));
     expect(url.searchParams.get("temperature_unit")).toBe("celsius");
     expect(url.searchParams.get("wind_speed_unit")).toBe("kmh");
     expect(url.searchParams.get("timezone")).toBe("Europe/Bucharest");
+    expect(url.searchParams.get("daily")).toContain("sunrise,sunset");
+    expect(url.searchParams.get("past_days")).toBe("1");
+    expect(url.searchParams.get("forecast_days")).toBe("2");
+    expect(url.searchParams.get("timeformat")).toBe("unixtime");
+  });
+
+  it("leaves out a day without sunrise or sunset", async () => {
+    const body = forecast();
+    body.daily.sunrise = [SUN[0].rise / 1000, null as unknown as number, SUN[2].rise / 1000];
+    mockFetch(() => json(body));
+    const weather = await getWeather(place);
+    expect(weather.sun).toEqual([SUN[0], SUN[2]]);
   });
 
   it("fails with 502 when the data cannot be read", async () => {

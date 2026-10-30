@@ -12,14 +12,13 @@ type Props = {
   image: string;
   names: string[];
   prompt: string;
+  /** "Painted Fri 12:15 AM, your time · took 18 s" */
+  caption: string;
   view: View;
   onView: (view: View) => void;
 };
 
-const BUTTON =
-  "rounded-full border border-haze/40 px-4 py-1.5 text-sm font-bold transition-colors hover:bg-haze/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-haze";
-
-export function PictureLightbox({ image, names, prompt, view, onView }: Props) {
+export function PictureLightbox({ image, names, prompt, caption, view, onView }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   // A native modal dialog: it traps focus, closes on Escape and gives the focus back afterwards.
@@ -43,18 +42,18 @@ export function PictureLightbox({ image, names, prompt, view, onView }: Props) {
   return (
     <dialog
       ref={dialog}
-      aria-label={panel === null ? "The whole picture" : `The ${names[panel]} panel`}
+      className="lightbox"
+      aria-label={panel === null ? "The painting, large" : `The ${names[panel]} panel, large`}
       onClose={() => onView(null)}
       onKeyDown={keyDown}
       onClick={(event) => event.target === event.currentTarget && onView(null)}
-      className="m-auto max-h-none max-w-none rounded-3xl bg-ink p-4 text-haze backdrop:bg-ink/95 backdrop:backdrop-blur-sm"
     >
       {view !== null && (
-        <div key={view} className="animate-zoom-in flex w-[min(74vh,92vw)] flex-col gap-4">
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-ink">
+        <div key={view} className="animate-zoom-in">
+          <div className="lightbox-frame">
             <Image
               src={image}
-              alt={panel === null ? "The whole picture" : `The ${names[panel]} panel of the picture`}
+              alt={panel === null ? `The 2×2 painting of ${names.join(", ")}, shown large.` : `The ${names[panel]} panel of the painting`}
               width={1024}
               height={1024}
               unoptimized
@@ -66,34 +65,33 @@ export function PictureLightbox({ image, names, prompt, view, onView }: Props) {
               }
             />
           </div>
-          <div>
-            <p className="font-display text-4xl font-extrabold uppercase leading-none">
-              {panel === null ? "The whole picture" : names[panel]}
-            </p>
-            {line && <p className="mt-2 font-mono text-xs leading-relaxed opacity-80">{line}</p>}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {panel !== null && (
-              <>
-                <button type="button" className={BUTTON} onClick={() => onView((panel + 3) % 4)}>
-                  ← Previous
+          <div className="lightbox-bar">
+            <div>
+              <h2>{panel === null ? "The whole painting" : names[panel]}</h2>
+              <p>{line ?? caption}</p>
+            </div>
+            <div className="big-acts">
+              {panel !== null ? (
+                <>
+                  <button type="button" className="btn-ink" onClick={() => onView((panel + 3) % 4)}>
+                    ← Previous
+                  </button>
+                  <button type="button" className="btn-ink" onClick={() => onView((panel + 1) % 4)}>
+                    Next →
+                  </button>
+                  <button type="button" className="btn-ink" onClick={() => onView(WHOLE)}>
+                    Whole painting
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="btn-ink" onClick={() => onView(0)}>
+                  Panel by panel
                 </button>
-                <button type="button" className={BUTTON} onClick={() => onView((panel + 1) % 4)}>
-                  Next →
-                </button>
-                <button type="button" className={BUTTON} onClick={() => onView(WHOLE)}>
-                  Whole picture
-                </button>
-              </>
-            )}
-            {panel === null && (
-              <button type="button" className={BUTTON} onClick={() => onView(0)}>
-                Panel by panel
+              )}
+              <button type="button" className="btn-ink solid" onClick={() => onView(null)}>
+                Close
               </button>
-            )}
-            <button type="button" className={`${BUTTON} ml-auto`} onClick={() => onView(null)}>
-              Close
-            </button>
+            </div>
           </div>
         </div>
       )}

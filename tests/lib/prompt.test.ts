@@ -14,7 +14,7 @@ function entry(
 ): PromptEntry {
   return {
     place: { id: 1, name, region, country, latitude, longitude: 0, timezone },
-    weather: { temperature: 12, weatherCode: 0, windSpeed: 10, isDay: true, high: 15, low: 8, ...weather },
+    weather: { temperature: 12, weatherCode: 0, windSpeed: 10, isDay: true, high: 15, low: 8, sun: [], ...weather },
   };
 }
 

@@ -46,11 +46,16 @@ const forecastSchema = z.object({
     wind_speed_10m: z.number(),
     is_day: z.number(),
   }),
+  // Three days (yesterday, today, tomorrow), so the daylight band can reach 12 hours either side of now.
   daily: z.object({
-    temperature_2m_max: z.array(z.number()).min(1),
-    temperature_2m_min: z.array(z.number()).min(1),
+    temperature_2m_max: z.array(z.number()).length(3),
+    temperature_2m_min: z.array(z.number()).length(3),
+    sunrise: z.array(z.number().nullable()).length(3),
+    sunset: z.array(z.number().nullable()).length(3),
   }),
 });
+
+const TODAY = 1; // with past_days=1, index 0 is yesterday
 
 type GeoResult = z.infer<typeof geoResultSchema>;
 
@@ -92,9 +97,11 @@ export async function getWeather(place: Pick<Place, "latitude" | "longitude" | "
     latitude: String(place.latitude),
     longitude: String(place.longitude),
     current: "temperature_2m,weather_code,wind_speed_10m,is_day",
-    daily: "temperature_2m_max,temperature_2m_min",
+    daily: "temperature_2m_max,temperature_2m_min,sunrise,sunset",
     timezone: place.timezone, // so "today" means today in that place
-    forecast_days: "1",
+    past_days: "1",
+    forecast_days: "2",
+    timeformat: "unixtime", // sunrise and sunset as UTC seconds: no time zone maths here
     temperature_unit: "celsius",
     wind_speed_unit: "kmh",
   });
@@ -110,7 +117,11 @@ export async function getWeather(place: Pick<Place, "latitude" | "longitude" | "
     weatherCode: current.weather_code,
     windSpeed: current.wind_speed_10m,
     isDay: current.is_day === 1,
-    high: daily.temperature_2m_max[0],
-    low: daily.temperature_2m_min[0],
+    high: daily.temperature_2m_max[TODAY],
+    low: daily.temperature_2m_min[TODAY],
+    sun: daily.sunrise.flatMap((rise, i) => {
+      const set = daily.sunset[i];
+      return rise === null || set === null ? [] : [{ rise: rise * 1000, set: set * 1000 }];
+    }),
   };
 }

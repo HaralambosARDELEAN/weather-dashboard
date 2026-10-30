@@ -1,11 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { PANEL_POSITIONS } from "@/lib/prompt";
+import type { PanelLine } from "@/lib/prompt-lines";
 import { QuadrantMark } from "./quadrant-mark";
+import { SLOT_COLORS, SLOT_KEYS } from "./slots";
 
-/** The exact prompt, with each panel's line marked by its position in the picture. */
-export function PromptText({ prompt }: { prompt: string }) {
+type Props = {
+  prompt: string;
+  panels: PanelLine[];
+  rules: string[];
+};
+
+/**
+ * The exact prompt, written as the big card's message: one line per panel, marked with its quadrant
+ * and colour, then the style and rule lines on request. A line under the pointer or focus lights its quadrant.
+ */
+export function PromptText({ prompt, panels, rules }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -19,41 +29,41 @@ export function PromptText({ prompt }: { prompt: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-ink/5 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold">Prompt sent to the image model</h3>
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded-full border border-ink/20 px-3 py-1 text-xs font-bold transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          <span aria-live="polite">{copied ? "Copied" : "Copy prompt"}</span>
+    <>
+      <ul className="lines">
+        {panels.map((panel) => (
+          <li key={panel.index} data-q={SLOT_KEYS[panel.index]} tabIndex={0}>
+            <QuadrantMark index={panel.index} color={SLOT_COLORS[panel.index]} />
+            <div>
+              <b>
+                {panel.position}
+                <span className="sr-only">: </span>
+              </b>
+              {panel.text}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="rules">
+        {rules.length > 0 && (
+          <details>
+            <summary>
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 3l4 4-4 4" />
+              </svg>
+              Show the {rules.length} style and rule lines
+            </summary>
+            <ol>
+              {rules.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ol>
+          </details>
+        )}
+        <button type="button" className="copy" onClick={copy}>
+          <span aria-live="polite">{copied ? "Copied" : "Copy the prompt"}</span>
         </button>
       </div>
-      <div className="space-y-1 font-mono text-xs leading-relaxed">
-        {prompt.split("\n").map((line, i) => {
-          const panel = PANEL_POSITIONS.findIndex((position) => line.startsWith(`${position}:`));
-          if (panel === -1) {
-            return (
-              <p key={i} className="text-slate">
-                {line}
-              </p>
-            );
-          }
-          const position = PANEL_POSITIONS[panel];
-          return (
-            <p key={i} className="flex gap-2 border-t border-mist/70 pt-1.5 text-ink">
-              <span className="mt-1 text-ink">
-                <QuadrantMark index={panel} />
-              </span>
-              <span>
-                <strong>{position}:</strong>
-                {line.slice(position.length + 1)}
-              </span>
-            </p>
-          );
-        })}
-      </div>
-    </div>
+    </>
   );
 }

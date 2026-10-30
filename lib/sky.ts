@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
+import { sunIsLow } from "./daylight";
 import type { Weather } from "./schemas";
-import { localHour } from "./time";
 import { describeWeather, type WeatherKind } from "./weather-codes";
 
 /** A sky as a vertical gradient (top of the sky to the horizon) and the text colour that reads on it. */
@@ -30,17 +30,16 @@ const NIGHT: Record<WeatherKind, Sky> = {
 
 const LOW_SUN: Sky = { top: "#f09b70", bottom: "#f6caa0", text: INK };
 
-/** The card colours: roughly what the sky looks like there right now. */
-export function skyFor(kind: WeatherKind, isDay: boolean, hour: number): Sky {
+/** The pane colours: roughly what the sky looks like there right now. */
+export function skyFor(kind: WeatherKind, isDay: boolean, lowSun: boolean): Sky {
   if (!isDay) return NIGHT[kind];
-  const sunIsLow = hour < 8 || hour >= 18;
-  if (sunIsLow && (kind === "clear" || kind === "cloudy")) return LOW_SUN;
+  if (lowSun && (kind === "clear" || kind === "cloudy")) return LOW_SUN;
   return DAY[kind];
 }
 
-/** The sky for a place's current weather, at its local time. */
-export function skyForWeather(weather: Weather, timezone: string, now: Date): Sky {
-  return skyFor(describeWeather(weather.weatherCode).kind, weather.isDay, localHour(timezone, now));
+/** The sky for a place's current weather; the sun is low in the hour after its real sunrise and before its sunset. */
+export function skyForWeather(weather: Weather, now: Date): Sky {
+  return skyFor(describeWeather(weather.weatherCode).kind, weather.isDay, sunIsLow(weather.sun, now.getTime()));
 }
 
 export type TemperatureEffect = { kind: "frost" | "heat"; level: number };

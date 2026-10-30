@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SunDay } from "./daylight";
 
 /** A place picked by the user. Comes from Open-Meteo geocoding. */
 export const placeSchema = z.object({
@@ -21,4 +22,6 @@ export type Weather = {
   isDay: boolean;
   high: number;
   low: number;
+  /** Sunrise and sunset for yesterday, today and tomorrow (days the service left empty are skipped). */
+  sun: SunDay[];
 };

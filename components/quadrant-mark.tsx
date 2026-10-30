@@ -1,13 +1,18 @@
-import { PANEL_POSITIONS } from "@/lib/prompt";
+// The filled cell of the 2x2 mark, per panel.
+const CELLS = [
+  [1.7, 1.7],
+  [10.7, 1.7],
+  [1.7, 10.7],
+  [10.7, 10.7],
+] as const;
 
-/** A small 2x2 mark showing which panel of the picture this place becomes. */
-export function QuadrantMark({ index }: { index: number }) {
-  const label = `${PANEL_POSITIONS[index]} panel of the picture`;
+/** A small 2x2 mark with this place's panel of the painting filled in, in the card's colour. Decorative. */
+export function QuadrantMark({ index, color }: { index: number; color?: string }) {
+  const [x, y] = CELLS[index];
   return (
-    <span role="img" aria-label={label} title={label} className="inline-grid shrink-0 grid-cols-2 gap-0.5">
-      {PANEL_POSITIONS.map((position, i) => (
-        <span key={position} className={`size-2 bg-current ${i === index ? "" : "opacity-25"}`} />
-      ))}
-    </span>
+    <svg viewBox="0 0 20 20" aria-hidden="true" style={{ color }}>
+      <use href="#quad" />
+      <rect x={x} y={y} width="7.6" height="7.6" fill="currentColor" />
+    </svg>
   );
 }

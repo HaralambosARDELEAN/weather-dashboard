@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { callApi } from "@/lib/api-client";
 import { placeDetails } from "@/lib/format";
+import { clockTime } from "@/lib/postal";
 import type { Place } from "@/lib/schemas";
 
 type Props = {
-  /** Returns an error message when the place cannot be added. */
+  /** Returns an error message when the place cannot be used. */
   onPick: (place: Place) => string | null;
   onCancel?: () => void;
-  autoFocus?: boolean;
-  /** A short suggestion shown under the empty box, for someone who has not started yet. */
-  hint?: string;
+  /** Changes when the box should take the keyboard focus (Replace or an empty card's button was clicked). */
+  focusKey?: number;
+  label: string;
+  placeholder: string;
+  /** What picking a result does: "Add", "Replace…". */
+  action: string;
+  /** Places already on the desk, shown but not selectable. */
+  taken: readonly number[];
+  hint: ReactNode;
+  replacing: boolean;
+  now: Date;
 };
 
 type Search =
@@ -20,21 +29,30 @@ type Search =
   | { status: "done"; query: string; results: Place[] }
   | { status: "error"; message: string };
 
-export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
+const SearchIcon = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+    <circle cx="8.5" cy="8.5" r="6" />
+    <path d="m13 13 5 5" strokeLinecap="round" />
+  </svg>
+);
+
+/** The search in the header: an accessible combobox over Open-Meteo's place search. */
+export function PlaceSearch({ onPick, onCancel, focusKey, label, placeholder, action, taken, hint, replacing, now }: Props) {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState<Search>({ status: "idle" });
   const [active, setActive] = useState(0);
   const [pickError, setPickError] = useState<string | null>(null);
-  const [focused, setFocused] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [retry, setRetry] = useState(0);
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
 
-  // autoFocus only works when the box first appears; this also moves the focus to a box already on screen.
+  // Moves the focus here when a card asks for a place.
   useEffect(() => {
-    if (autoFocus) input.current?.focus();
-  }, [autoFocus]);
+    if (focusKey) input.current?.focus();
+  }, [focusKey]);
 
-  // Search 300 ms after the last keystroke; an older search still running is cancelled.
+  // Search 250 ms after the last keystroke; an older search still running is cancelled.
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) return;
@@ -46,41 +64,60 @@ export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
       if (controller.signal.aborted) return;
       setActive(0);
       setSearch(
-        result.ok ? { status: "done", query: q, results: result.data.results } : { status: "error", message: result.error },
+        result.ok
+          ? { status: "done", query: q, results: result.data.results }
+          : { status: "error", message: "Search isn't responding. Try again in a moment." },
       );
-    }, 300);
+    }, 250);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, retry]);
 
   const results = search.status === "done" ? search.results : [];
-  const open = focused && results.length > 0;
+  const isTaken = (place: Place) => taken.includes(place.id);
 
   function change(value: string) {
     setQuery(value);
     setPickError(null);
+    setOpen(true);
     setSearch(value.trim().length < 2 ? { status: "idle" } : { status: "loading" });
   }
 
   function pick(place: Place) {
-    setPickError(onPick(place));
+    if (isTaken(place)) return;
+    const error = onPick(place);
+    setPickError(error);
+    if (!error) {
+      change("");
+      setOpen(false);
+    }
   }
 
   function keyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
-      if (onCancel) onCancel();
-      else change("");
+      event.preventDefault();
+      // First Esc closes the list, the next one clears the box, then it cancels a replace.
+      if (open && search.status !== "idle") setOpen(false);
+      else if (query) change("");
+      else onCancel?.();
       return;
     }
-    if (!open) return;
+    if (event.key === "Enter" && search.status === "error") {
+      event.preventDefault();
+      setRetry((n) => n + 1);
+      return;
+    }
+    if (!open || results.length === 0) {
+      if (event.key === "ArrowDown" && results.length > 0) setOpen(true);
+      return;
+    }
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const step = event.key === "ArrowDown" ? 1 : -1;
       const next = (active + step + results.length) % results.length;
       setActive(next);
-      // Keep the highlighted option in view in a long list (only for the keyboard, not on hover).
       document.getElementById(`${id}-option-${next}`)?.scrollIntoView({ block: "nearest" });
     }
     if (event.key === "Enter") {
@@ -93,69 +130,90 @@ export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
   if (!message && search.status === "loading") message = "Searching…";
   if (!message && search.status === "error") message = search.message;
   if (!message && search.status === "done" && results.length === 0) {
-    message = `No places match “${search.query}”. Check the spelling or try a nearby town.`;
+    message = `No city or town called “${search.query}”. Check the spelling, or try a nearby larger town.`;
   }
-  if (!message && search.status === "idle" && query === "" && hint) message = hint;
-  const isError = pickError !== null || search.status === "error";
+  const showList = open && (results.length > 0 || message !== null);
+  // Read out by screen readers: how many results, or what went wrong.
+  const status = message ?? (search.status === "done" ? `${results.length} ${results.length === 1 ? "place" : "places"} found.` : "");
 
   return (
-    <div className="relative">
-      <label htmlFor={`${id}-input`} className="text-sm font-bold">
-        Add a place
+    <div className={`search ${replacing ? "is-replacing" : ""}`} role="search">
+      <label htmlFor={`${id}-input`} className="sr-only">
+        {label}
       </label>
-      <input
-        ref={input}
-        id={`${id}-input`}
-        type="text"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={`${id}-list`}
-        aria-autocomplete="list"
-        aria-activedescendant={open ? `${id}-option-${active}` : undefined}
-        autoComplete="off"
-        autoFocus={autoFocus}
-        value={query}
-        onChange={(event) => change(event.target.value)}
-        onKeyDown={keyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder="Search for a city or town"
-        className="mt-1 w-full rounded-xl border border-slate/50 bg-white px-3 py-2.5 text-base outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/25"
-      />
-      {open && (
-        <ul
-          id={`${id}-list`}
-          role="listbox"
-          aria-label="Matching places"
-          className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-xl border-2 border-ink bg-white py-1 shadow-2xl shadow-ink/30"
-        >
-          {results.map((place, i) => (
-            <li
-              key={place.id}
-              id={`${id}-option-${i}`}
-              role="option"
-              aria-selected={i === active}
-              onMouseDown={(event) => event.preventDefault()}
-              onMouseEnter={() => setActive(i)}
-              onClick={() => pick(place)}
-              className={`cursor-pointer border-b border-mist/70 px-3 py-2.5 last:border-b-0 ${
-                i === active ? "bg-ink text-haze" : "text-ink"
-              }`}
-            >
-              <span className="font-bold">{place.name}</span>
-              <span className={`block text-sm ${i === active ? "text-haze/80" : "text-slate"}`}>{placeDetails(place)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p aria-live="polite" className={`mt-2 min-h-5 text-sm ${isError ? "text-alert" : "text-slate"}`}>
-        {message}
+      <div className="field">
+        {SearchIcon}
+        <input
+          ref={input}
+          id={`${id}-input`}
+          type="search"
+          role="combobox"
+          aria-expanded={showList && results.length > 0}
+          aria-controls={`${id}-list`}
+          aria-autocomplete="list"
+          aria-activedescendant={showList && results.length > 0 ? `${id}-option-${active}` : undefined}
+          aria-describedby={`${id}-hint`}
+          autoComplete="off"
+          enterKeyHint="search"
+          value={query}
+          placeholder={placeholder}
+          onChange={(event) => change(event.target.value)}
+          onKeyDown={keyDown}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+        />
+      </div>
+      <p className="hint" id={`${id}-hint`}>
+        {hint}
+        {onCancel && (
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
       </p>
-      {onCancel && (
-        <button type="button" onClick={onCancel} className="text-sm underline underline-offset-4">
-          Cancel
-        </button>
+      {showList && (
+        // Clicks inside the list must not blur the box first, or the list would close before the click lands.
+        <div className="results" onMouseDown={(event) => event.preventDefault()}>
+          <ul id={`${id}-list`} role="listbox" aria-label="Matching places">
+            {results.map((place, i) => {
+              const onDesk = isTaken(place);
+              return (
+                <li
+                  key={place.id}
+                  id={`${id}-option-${i}`}
+                  role="option"
+                  aria-selected={i === active}
+                  aria-disabled={onDesk || undefined}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => pick(place)}
+                >
+                  <span>
+                    <b>{place.name}</b>
+                    {placeDetails(place) && <span className="where">, {placeDetails(place)}</span>}
+                  </span>
+                  <small>
+                    <span>{clockTime(place.timezone, now)} there</span>
+                    {onDesk ? "Already on the desk" : action}
+                  </small>
+                </li>
+              );
+            })}
+          </ul>
+          {message && (results.length === 0 || pickError) && (
+            <p className="results-msg">
+              {message}
+              {search.status === "error" && (
+                <button type="button" className="btn-ink" onClick={() => setRetry((n) => n + 1)}>
+                  Try again
+                </button>
+              )}
+            </p>
+          )}
+        </div>
       )}
+      <p aria-live="polite" className="sr-only">
+        {status}
+      </p>
     </div>
   );
 }

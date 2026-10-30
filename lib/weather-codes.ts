@@ -46,3 +46,36 @@ const UNKNOWN: Description = { label: "Unknown conditions", scene: "changeable w
 export function describeWeather(code: number): Description {
   return CODES[code] ?? UNKNOWN;
 }
+
+export type Precipitation = { type: "drizzle" | "rain" | "snow"; level: 1 | 2 | 3 };
+
+// How hard it falls, from the WMO code: 1 light, 2 moderate, 3 heavy. Storms rain heavily.
+const PRECIPITATION: Record<number, Precipitation> = {
+  51: { type: "drizzle", level: 1 },
+  53: { type: "drizzle", level: 2 },
+  55: { type: "drizzle", level: 3 },
+  56: { type: "drizzle", level: 1 },
+  57: { type: "drizzle", level: 2 },
+  61: { type: "rain", level: 1 },
+  63: { type: "rain", level: 2 },
+  65: { type: "rain", level: 3 },
+  66: { type: "rain", level: 1 },
+  67: { type: "rain", level: 3 },
+  80: { type: "rain", level: 1 },
+  81: { type: "rain", level: 2 },
+  82: { type: "rain", level: 3 },
+  95: { type: "rain", level: 3 },
+  96: { type: "rain", level: 3 },
+  99: { type: "rain", level: 3 },
+  71: { type: "snow", level: 1 },
+  73: { type: "snow", level: 2 },
+  75: { type: "snow", level: 3 },
+  77: { type: "snow", level: 1 },
+  85: { type: "snow", level: 1 },
+  86: { type: "snow", level: 3 },
+};
+
+/** What falls from the sky and how hard, so light drizzle and a downpour look different. */
+export function precipitation(code: number): Precipitation | null {
+  return PRECIPITATION[code] ?? null;
+}

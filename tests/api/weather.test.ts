@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/weather/route";
-import { forecast, json, mockFetch } from "../helpers";
+import { forecast, json, mockFetch, SUN } from "../helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -23,6 +23,7 @@ describe("GET /api/weather", () => {
       isDay: false,
       high: 15.9,
       low: 8.2,
+      sun: SUN,
     });
   });
 

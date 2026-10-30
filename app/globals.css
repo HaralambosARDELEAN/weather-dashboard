@@ -7,26 +7,1936 @@
 }
 
 @theme {
-  --color-haze: #eef1f3;
-  --color-ink: #16202a;
-  --color-slate: #56636f;
-  --color-mist: #cbd3da;
-  --color-windsock: #c8441c;
-  --color-alert: #b42318;
+  /* A cobalt bookcloth desk, paper postcards, ink, and postal colours. */
+  --color-desk: #2139b3;
+  --color-paper: #fbfaf7;
+  --color-ink: #171b3d;
+  --color-ink-2: #474b6b;
+  --color-ink-3: #6c6f8e; /* darker than the model's #8487A0, for AA on paper */
+  --color-rule: #dcdae3;
+  --color-leader: #c9c7d4;
+  --color-hover-paper: #f0eef6;
+  --color-yellow: #ffc933;
+  --color-yellow-deep: #d9a300;
+  --color-pm: #2f2585;
+  /* One colour per card, in panel order: top left, top right, bottom left, bottom right. */
+  --color-verm: #e8492f;
+  --color-rose: #d23f7c;
+  --color-violet: #6a4fd0;
+  --color-spruce: #1f8a5b;
+  --color-saffron: #e39a0b;
+  /* Airmail label stripes. */
+  --color-air-red: #d8323c;
+  --color-air-blue: #1f48b0;
+  --color-ink-hover: #2a2f60;
+
+  --radius-card: 3px;
+  --radius-big: 4px;
+  --radius-field: 10px;
+  --radius-btn: 8px;
+  --radius-act: 7px;
+  --radius-paint: 12px;
+
+  --shadow-card: 0 0 0 0.5px rgba(20, 20, 60, 0.12), 0 1px 1px rgba(8, 14, 70, 0.28), 0 8px 12px -4px rgba(8, 14, 70, 0.32), 0 26px 44px -14px rgba(6, 10, 55, 0.62);
+  --shadow-card-lift: 0 0 0 0.5px rgba(20, 20, 60, 0.12), 0 2px 2px rgba(8, 14, 70, 0.2), 0 16px 20px -6px rgba(8, 14, 70, 0.3), 0 44px 70px -18px rgba(6, 10, 55, 0.7);
+  --shadow-big: 0 0 0 0.5px rgba(20, 20, 60, 0.12), 0 1px 1px rgba(8, 14, 70, 0.28), 0 10px 16px -6px rgba(8, 14, 70, 0.3), 0 40px 70px -20px rgba(6, 10, 55, 0.7);
+  --shadow-field: 0 1px 0 rgba(255, 255, 255, 0.4) inset, 0 2px 0 rgba(0, 0, 40, 0.18), 0 10px 24px -10px rgba(5, 10, 60, 0.6);
+  --shadow-results: 0 24px 50px -16px rgba(5, 10, 60, 0.7);
+  --shadow-paint: 0 4px 0 var(--color-yellow-deep), 0 14px 28px -10px rgba(5, 8, 50, 0.7);
+  --shadow-dialog: 0 40px 90px rgba(0, 0, 30, 0.6);
 }
 
+:root {
+  /* The font stacks for the hand-written CSS below (the @theme ones are inlined into utilities). */
+  --display: var(--font-display-face), "Arial Narrow", sans-serif;
+  --body: var(--font-body-face), system-ui, sans-serif;
+  --mono: var(--font-mono-face), ui-monospace, monospace;
+  /* Paper and print grain, a 180px tile; used on the desk, the cards and the pictures. */
+  --grain: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32  0 0 0 0 .3  0 0 0 0 .36  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html {
+  background-color: var(--color-desk);
+  color-scheme: light;
+}
+
+/* The desk: cobalt bookcloth under a lamp, with a fine weave and grain. */
 body {
-  background: var(--color-haze);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+  min-height: 100dvh;
+  color: #fff;
+  line-height: 1.5;
+  font-family: var(--body);
+  background-color: var(--color-desk);
+  background-image:
+    radial-gradient(1100px 640px at 22% -4%, rgba(110, 140, 255, 0.34), transparent 64%),
+    radial-gradient(700px 500px at 80% 38%, rgba(90, 120, 255, 0.14), transparent 70%),
+    radial-gradient(900px 700px at 100% 55%, rgba(10, 18, 90, 0.35), transparent 70%),
+    linear-gradient(180deg, transparent 70%, rgba(10, 16, 80, 0.4)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 40, 0.05) 0 1px, transparent 1px 3px),
+    var(--grain);
 }
 
-/* Entrances */
+/* The tilted cards stick out a little at the sides. Clipped here, not on body: overflow on body or html
+   goes to the viewport as "hidden", which focus() and scrollIntoView can still scroll sideways on a phone. */
+.page {
+  overflow-x: clip;
+}
 
-@keyframes rise {
+button {
+  cursor: pointer;
+}
+
+/* The yellow ring reads on both cobalt and paper. */
+:focus-visible {
+  outline: 3px solid var(--color-yellow);
+  outline-offset: 3px;
+}
+
+/* The search field draws its own ring around the whole field. */
+.field input:focus-visible {
+  outline: none;
+}
+
+@layer components {
+  .wrap {
+    width: min(1280px, 100% - 32px);
+    margin-inline: auto;
+  }
+
+  /* ---------- Header ---------- */
+
+  .top {
+    padding-top: 26px;
+  }
+  /* The wordmark, and the tagline under it. */
+  .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  .logo {
+    flex: none;
+    width: 34px;
+    height: 22px;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 40, 0.35));
+  }
+  .wordmark {
+    font: 800 22px/1 var(--display);
+    font-stretch: 125%;
+    letter-spacing: -0.01em;
+  }
+  .tagline {
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.74);
+  }
+
+  /* ---------- Buttons ---------- */
+
+  .btn-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: var(--radius-btn);
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.06);
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-line:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: #fff;
+  }
+  .btn-line svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .btn-ink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: var(--radius-btn);
+    border: 1.5px solid var(--color-ink);
+    background: transparent;
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: 0.2s;
+  }
+  .btn-ink:hover {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  .btn-ink.solid {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  .btn-ink.solid:hover {
+    background: var(--color-ink-hover);
+  }
+  .btn-ink svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .btn-yellow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-btn);
+    background: var(--color-yellow);
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .btn-yellow:hover {
+    background: #ffd65c;
+  }
+
+  /* ---------- Search ---------- */
+
+  .search {
+    position: relative;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 48px;
+    padding: 0 16px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border-radius: var(--radius-field);
+    box-shadow: var(--shadow-field);
+  }
+  .field svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--color-ink-2);
+  }
+  .field input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    background: none;
+    font-size: 16px; /* 16px or more, so iOS does not zoom in */
+    outline: none;
+  }
+  .field input::placeholder {
+    color: var(--color-ink-3);
+  }
+  .field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field:focus-within {
+    box-shadow: 0 0 0 3px var(--color-yellow), 0 10px 24px -10px rgba(5, 10, 60, 0.6);
+  }
+  .search.is-replacing .field {
+    box-shadow: 0 0 0 3px var(--color-yellow), var(--shadow-field);
+  }
+  .hint {
+    margin: 8px 2px 0;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.74);
+  }
+  .hint b {
+    font-weight: 600;
+    color: #fff;
+  }
+  .hint button {
+    margin-left: 4px;
+    padding: 2px 2px;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .results {
+    position: absolute;
+    z-index: 30;
+    left: 0;
+    right: 0;
+    top: 54px;
+    max-height: min(420px, 70vh);
+    overflow: auto;
+    padding: 6px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border-radius: var(--radius-field);
+    box-shadow: var(--shadow-results);
+  }
+  .results [role="option"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 9px 12px;
+    border-radius: var(--radius-act);
+    cursor: pointer;
+  }
+  .results [role="option"] {
+    border-left: 4px solid transparent;
+  }
+  /* The highlighted result is unmistakable: postal yellow, an ink bar on the left, and what Enter will do. */
+  .results [aria-selected="true"] {
+    background: var(--color-yellow);
+    border-left-color: var(--color-ink);
+  }
+  .results [aria-selected="true"] .where,
+  .results [aria-selected="true"] small,
+  .results [aria-selected="true"] small span {
+    color: var(--color-ink);
+  }
+  .results [aria-selected="true"]:not([aria-disabled="true"]) small::after {
+    content: " ↵";
+    font-weight: 700;
+  }
+  .results [aria-selected="true"][aria-disabled="true"] {
+    background: var(--color-hover-paper);
+  }
+  .results [aria-disabled="true"] {
+    cursor: default;
+    color: var(--color-ink-3);
+  }
+  .results b {
+    font-weight: 650;
+  }
+  .results .where {
+    color: var(--color-ink-2);
+    font-size: 14px;
+  }
+  .results small {
+    flex: none;
+    font: 500 11px/1.5 var(--mono);
+    color: var(--color-ink-3);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .results small span {
+    display: block;
+    color: var(--color-ink-2);
+  }
+  .results-msg {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--color-ink-2);
+  }
+  .results-msg button {
+    margin-left: 6px;
+  }
+
+  /* ---------- Summary ---------- */
+
+  /* The summary on the left, the ready-made sets on the right. */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 352px);
+    align-items: center;
+    gap: 36px 64px;
+    padding: 48px 0 44px;
+  }
+  .kicker {
+    margin: 0 0 18px;
+    font: 500 12px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .headline {
+    font: 760 64px/1 var(--display);
+    font-stretch: 74%;
+    letter-spacing: -0.012em;
+  }
+  .sub {
+    margin-top: 22px;
+    max-width: 60ch;
+    font-size: 20px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.86);
+  }
+
+  /* ---------- Toolbar above the cards: search, and the ready-made sets ---------- */
+
+  .toolbar {
+    position: relative;
+    z-index: 6; /* the search results open over the cards */
+    margin-bottom: 34px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+  }
+  .toolbar-title,
+  .sets-title {
+    margin: 0 0 12px;
+    font: 500 12px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .toolbar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 24px 48px;
+  }
+  .toolbar-row > div:first-child {
+    max-width: 640px;
+  }
+
+  /* Ready-made sets: the set name, then a strip of four perforated stamps, one per place. */
+  .set {
+    display: block;
+    width: 100%;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    text-align: left;
+  }
+  .set:last-child {
+    margin-bottom: 0;
+  }
+  .set-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 7px;
+    font-weight: 650;
+    font-size: 14.5px;
+  }
+  .set-name i {
+    font: 500 11px var(--mono);
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.65);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: 0.25s;
+  }
+  .set:hover .set-name i,
+  .set:focus-visible .set-name i {
+    opacity: 1;
+    transform: none;
+  }
+  /* The drop shadow sits on the strip, because the perforation mask would clip a shadow on the stamps. */
+  .strip {
+    display: flex;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 40, 0.25)) drop-shadow(0 6px 8px rgba(0, 0, 50, 0.35));
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .set:nth-of-type(2) .strip {
+    transform: rotate(-0.6deg);
+  }
+  .set:nth-of-type(3) .strip {
+    transform: rotate(0.5deg);
+  }
+  .set:hover .strip,
+  .set:focus-visible .strip {
+    transform: translateY(-3px) rotate(0);
+  }
+  /* Perforation: holes punched every --s px on the edges, then the inside filled back in. */
+  .mini,
+  .stamp {
+    --s: 7px;
+    --hole: 2.6px;
+    background: var(--color-paper);
+    -webkit-mask:
+      radial-gradient(circle var(--hole), #0000 96%, #000) calc(var(--s) / -2) calc(var(--s) / -2) / var(--s) var(--s) round,
+      linear-gradient(#000 0 0) center / calc(100% - var(--s)) calc(100% - var(--s)) no-repeat;
+    mask:
+      radial-gradient(circle var(--hole), #0000 96%, #000) calc(var(--s) / -2) calc(var(--s) / -2) / var(--s) var(--s) round,
+      linear-gradient(#000 0 0) center / calc(100% - var(--s)) calc(100% - var(--s)) no-repeat;
+  }
+  .mini {
+    flex: 1;
+    min-width: 0;
+    height: 56px;
+    padding: 6px;
+  }
+  .mini > span {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    padding: 5px 6px;
+    background: var(--sc);
+    background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.09) 0 1px, transparent 1px 3px);
+    color: #fff;
+    line-height: 1.1;
+  }
+  .mini b {
+    overflow: hidden;
+    font: 700 11.5px/1.1 var(--body);
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .mini small {
+    overflow: hidden;
+    font: 500 8.5px/1.2 var(--mono);
+    letter-spacing: 0.02em;
+    opacity: 0.9;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .set.c1 {
+    --sc: var(--color-saffron);
+  }
+  .set.c1 .mini > span {
+    color: var(--color-ink);
+  }
+  .set.c2 {
+    --sc: var(--color-verm);
+  }
+  .set.c3 {
+    --sc: var(--color-violet);
+  }
+
+  /* ---------- The four postcards ---------- */
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 34px;
+    align-items: start;
+    padding: 6px 4px 0;
+  }
+  .pc {
+    --rot: 0deg;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 11px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border-radius: var(--radius-card);
+    transform: rotate(var(--rot));
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* backwards, not forwards: the hover lift still works after the drop */
+    animation: drop 0.8s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+    animation-delay: calc(var(--i) * 90ms + 120ms);
+    container-type: inline-size;
+  }
+  .pc::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(128deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 38%, rgba(30, 30, 80, 0.05) 100%),
+      var(--grain);
+    background-size: auto, 180px 180px;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+  .pc:hover,
+  .pc:focus-within {
+    transform: rotate(0) translateY(-8px);
+    box-shadow: var(--shadow-card-lift);
+  }
+  .pc:nth-child(1) {
+    --rot: -2.3deg;
+    margin-top: 10px;
+  }
+  .pc:nth-child(2) {
+    --rot: 1.5deg;
+    margin-top: 30px;
+  }
+  .pc:nth-child(3) {
+    --rot: -1deg;
+  }
+  .pc:nth-child(4) {
+    --rot: 2.1deg;
+    margin-top: 22px;
+  }
+  /* The card a search will replace. */
+  .pc.is-target {
+    outline: 3px solid var(--color-yellow);
+    outline-offset: 5px;
+  }
+
+  .pic {
+    position: relative;
+    aspect-ratio: 300 / 252;
+    overflow: hidden;
+    border-radius: 1px;
+    isolation: isolate;
+    background: #2d3a6c;
+  }
+  .pic svg.sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* Legibility scrim behind the name: lighter on light skies. */
+  .pic::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(12, 14, 44, var(--scrim, 0.6)), rgba(12, 14, 44, calc(var(--scrim, 0.6) * 0.3)) 38%, transparent 56%);
+  }
+  /* Print grain over the picture. */
+  .pic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: var(--grain);
+    background-size: 150px;
+    mix-blend-mode: soft-light;
+    opacity: 0.9;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 30, 0.08);
+  }
+  /* The live sky draws its own stars above the horizon only. */
+  .pic .ambience-stars {
+    display: none;
+  }
+  /* Off screen, the sky stops moving (the painting's reveal still runs on time). */
+  .pic[data-offscreen] .sky *,
+  .pic[data-offscreen] .ambience,
+  .pic[data-offscreen] .ambience * {
+    animation-play-state: paused !important;
+  }
+  .pic-wait {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #4b5d9e, #7b88b8);
+  }
+  .pic-painted {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    animation: fade 0.4s ease-out both;
+    animation-delay: calc(var(--i) * 120ms + 600ms);
+  }
+  /* Its own quadrant of the painting: a full-width square anchored to the bottom, so the street stays in view. */
+  .pic-painted > i {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6cqw; /* below the box: hides the painting's own small place label along the panel's bottom edge */
+    aspect-ratio: 1;
+    background-image: var(--painting);
+    background-size: 204% 204%; /* a little more than 200%, to crop the thin white borders between panels */
+    background-repeat: no-repeat;
+  }
+  [data-slot="tl"] .pic-painted > i {
+    background-position: 0 0;
+  }
+  [data-slot="tr"] .pic-painted > i {
+    background-position: 100% 0;
+  }
+  [data-slot="bl"] .pic-painted > i {
+    background-position: 0 100%;
+  }
+  [data-slot="br"] .pic-painted > i {
+    background-position: 100% 100%;
+  }
+  .pic-tag {
+    position: absolute;
+    z-index: 3;
+    top: 10px;
+    left: 10px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    background: rgba(23, 27, 61, 0.62);
+    color: #fff;
+    font: 500 10px/1.3 var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .pic-sheen {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+    background-size: 300% 100%;
+    animation: sheen 2.2s linear infinite;
+  }
+  .caption {
+    position: absolute;
+    z-index: 3;
+    left: 14px;
+    right: 12px;
+    bottom: 12px;
+    color: #fff;
+  }
+  /* Large-letter postcard name, extruded in the card's colour. */
+  .name {
+    font: 880 30px/0.92 var(--display);
+    font-stretch: 104%;
+    text-transform: uppercase;
+    letter-spacing: 0.005em;
+    overflow-wrap: anywhere;
+    text-shadow: 1px 1px 0 var(--c), 2px 2px 0 var(--c), 3px 3px 0 var(--c), 3.5px 3.5px 10px rgba(0, 0, 20, 0.35);
+  }
+  .name:focus {
+    outline: none;
+  }
+  .name.is-medium {
+    font-size: 24px;
+  }
+  .name.is-small {
+    font-size: 20px;
+  }
+  .region {
+    margin-top: 9px;
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    opacity: 0.92;
+  }
+  .pick {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    background: rgba(23, 27, 61, 0.45);
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 16px 5px 2px;
+  }
+  .msg-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 170px;
+    align-items: start;
+    min-height: 114px;
+  }
+  .temp {
+    font: 800 56px/0.84 var(--display);
+    font-stretch: 78%;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+  }
+  .temp sup {
+    position: relative;
+    top: 0.08em;
+    margin-left: 2px;
+    font-size: 0.4em;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
+    vertical-align: top;
+  }
+  .cond {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.3;
+    font-weight: 650;
+  }
+  .cond span {
+    display: block;
+    max-width: 13ch;
+    font-weight: 450;
+    font-size: 13px;
+    color: var(--color-ink-2);
+  }
+  .frank {
+    position: relative;
+    height: 112px;
+  }
+  .stampw {
+    display: block;
+    filter: drop-shadow(0 0.5px 0.5px rgba(0, 0, 40, 0.35)) drop-shadow(0 2px 2px rgba(0, 0, 40, 0.14));
+    transform: rotate(2.5deg);
+  }
+  .frank .stampw {
+    position: absolute;
+    right: 0;
+    top: -2px;
+  }
+  .frank .pm {
+    position: absolute;
+    right: 2px;
+    top: 6px;
+    width: 160px;
+    height: 105px;
+    transform-origin: 30% 55%;
+    transform: rotate(var(--pmr, -7deg));
+    animation: thunk 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+    animation-delay: calc(var(--i) * 90ms + 640ms);
+  }
+  .pm {
+    color: var(--color-pm);
+    mix-blend-mode: multiply;
+    overflow: visible;
+  }
+
+  /* A stamp: the slot colour, the temperature, a weather glyph and the country. */
+  .stamp {
+    display: block;
+    width: 60px;
+    height: 72px;
+    padding: 6px;
+  }
+  .stamp > span {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 4px 2px 3px;
+    color: #fff;
+    background: var(--sc);
+    background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 2.6px);
+  }
+  .stamp b {
+    align-self: flex-start;
+    padding-left: 2px;
+    font: 800 12px/1 var(--display);
+    font-stretch: 80%;
+  }
+  /* The glyphs' filled parts use currentColor, so they cover the lines behind them in the stamp's colour. */
+  .stamp svg {
+    width: 34px;
+    height: 24px;
+    color: var(--sc);
+  }
+  .stamp i {
+    max-width: 100%;
+    overflow: hidden;
+    font: 600 6.2px/1 var(--mono);
+    font-style: normal;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .facts {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-rule);
+  }
+  .facts > div {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 3.5px 0;
+  }
+  .facts dt {
+    font-size: 13.5px;
+    color: var(--color-ink-2);
+    white-space: nowrap;
+  }
+  /* Dotted leaders between label and value. */
+  .facts > div::after {
+    content: "";
+    order: 1;
+    flex: 1;
+    min-width: 10px;
+    border-bottom: 1.5px dotted var(--color-leader);
+    transform: translateY(-3px);
+  }
+  .facts dd {
+    order: 2;
+    font: 500 12.5px/1.3 var(--mono);
+    font-stretch: 88%;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .facts dd small {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--color-ink-3);
+  }
+  .is-stale .msg-data {
+    opacity: 0.6;
+  }
+  .stale,
+  .msg-alert {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 10px;
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius-act);
+    background: #fdebe6;
+    color: #8a2a18;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .stale button,
+  .msg-alert button {
+    flex: none;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-act);
+    background: #fff;
+    color: #8a2a18;
+    font-weight: 650;
+    font-size: 12.5px;
+  }
+  .skel {
+    display: block;
+    border-radius: 3px;
+    background: linear-gradient(110deg, #e9e7ef 35%, #f5f4f8 50%, #e9e7ef 65%);
+    background-size: 300% 100%;
+    animation: sheen 1.6s linear infinite;
+  }
+  .acts {
+    display: flex;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 14px;
+  }
+  .acts button {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    border-radius: var(--radius-act);
+    border: 1px solid var(--color-rule);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-ink-2);
+    transition: 0.2s;
+  }
+  .acts button:hover {
+    background: var(--color-hover-paper);
+    color: var(--color-ink);
+    border-color: #c8c5d6;
+  }
+  .acts svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* A blank postcard in an empty slot. */
+  .pc.blank {
+    opacity: 0.92;
+  }
+  .blank-pic {
+    position: relative;
+    display: grid;
+    place-content: center;
+    gap: 8px;
+    aspect-ratio: 300 / 252;
+    border: 1.5px dashed var(--color-leader);
+    border-radius: 1px;
+    background: rgba(33, 57, 179, 0.08);
+    color: var(--color-ink-3);
+    text-align: center;
+  }
+  .blank-pic svg {
+    justify-self: center;
+    width: 30px;
+    height: 30px;
+  }
+  .blank-pic span {
+    font: 500 11px/1.3 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .blank-title {
+    font: 800 30px/0.95 var(--display);
+    font-stretch: 80%;
+    letter-spacing: -0.015em;
+  }
+  .blank-note {
+    margin-top: 8px;
+    max-width: 18ch;
+    font-size: 13px;
+    color: var(--color-ink-2);
+  }
+  .blank-stamp {
+    justify-self: end;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 72px;
+    border: 1.5px dashed var(--color-leader);
+    color: var(--color-ink-3);
+    font: 800 30px/1 var(--display);
+    transform: rotate(2.5deg);
+  }
+  .blank .acts .btn-ink {
+    flex: 1;
+    height: 38px;
+    border: 1.5px solid var(--color-ink);
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .blank .acts .btn-ink:hover {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  .pc.blank.is-next .blank-pic,
+  .pc.blank.is-next .blank-stamp {
+    border-color: var(--color-yellow-deep);
+  }
+
+  /* A place chosen while the desk is full, waiting for the card it replaces. */
+  .pickbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin: 0 0 28px;
+    padding: 10px 10px 10px 16px;
+    border-radius: var(--radius-field);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-weight: 600;
+    box-shadow: var(--shadow-field);
+  }
+
+  /* ---------- The paint action: an airmail label ---------- */
+
+  .big {
+    margin-top: 104px;
+  }
+
+  .airmail-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  /* Par avion: red and blue diagonal stripes around a paper label. */
+  .airmail {
+    position: relative;
+    display: block;
+    width: min(100%, 400px);
+    padding: 7px;
+    border: 0;
+    border-radius: 5px;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-air-red) 0 11px,
+      var(--color-paper) 11px 18px,
+      var(--color-air-blue) 18px 29px,
+      var(--color-paper) 29px 36px
+    );
+    color: var(--color-ink);
+    text-align: left;
+    box-shadow: 0 1px 1px rgba(8, 14, 70, 0.28), 0 8px 18px -8px rgba(8, 14, 70, 0.45);
+    transform: rotate(-0.8deg);
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s;
+  }
+  .airmail:hover {
+    transform: rotate(0) translateY(-2px);
+    box-shadow: 0 2px 2px rgba(8, 14, 70, 0.25), 0 14px 24px -10px rgba(8, 14, 70, 0.5);
+  }
+  .airmail:active {
+    transform: rotate(0) translateY(1px);
+    box-shadow: 0 1px 1px rgba(8, 14, 70, 0.3);
+  }
+  .airmail-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    padding: 12px 18px 15px;
+    border-radius: 2px;
+    background: var(--color-paper);
+  }
+  .par-avion {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 650;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.14em;
+    color: var(--color-air-blue);
+  }
+  .par-avion span:last-child {
+    color: var(--color-air-red);
+  }
+  .airmail-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font: 780 30px/1 var(--display);
+    font-stretch: 86%;
+    letter-spacing: -0.01em;
+  }
+  .airmail-label svg {
+    flex: none;
+    width: 28px;
+    height: 28px;
+  }
+  .airmail[aria-disabled="true"] {
+    cursor: not-allowed;
+    filter: grayscale(1);
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+  }
+  .airmail.is-busy {
+    cursor: progress;
+    filter: none;
+    opacity: 1;
+  }
+  .airmail-note {
+    font: 500 12px/1.45 var(--mono);
+    color: var(--color-ink-2);
+  }
+  .airmail-wrap + .note {
+    margin-top: 20px;
+  }
+  .airmail-note button {
+    margin-left: 10px;
+    height: 32px;
+    vertical-align: middle;
+  }
+
+  /* On phones: the paint action follows you while the big card's button is off screen. */
+  .paint-bar {
+    display: none;
+  }
+
+  /* ---------- The big card: the painting, with its prompt as the message ---------- */
+
+  .big {
+    position: relative;
+    display: grid;
+    grid-template-columns: 620px minmax(0, 1fr);
+    grid-template-areas: "pic msg" "foot foot";
+    gap: 0 40px;
+    padding: 20px 34px 0 20px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border-radius: var(--radius-big);
+    transform: rotate(-0.7deg);
+    box-shadow: var(--shadow-big);
+  }
+  .big::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 30%, rgba(30, 30, 80, 0.05)), var(--grain);
+    background-size: auto, 180px;
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+  }
+  .big-pic {
+    grid-area: pic;
+    position: relative;
+    align-self: start;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #fff;
+  }
+  .big-pic > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .big-pic > img.develop {
+    animation: develop 0.6s ease-out both;
+  }
+  .big-pic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--grain);
+    background-size: 150px;
+    mix-blend-mode: soft-light;
+    opacity: 0.6;
+  }
+  .q {
+    position: absolute;
+    z-index: 2;
+    width: 50%;
+    height: 50%;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 4px var(--color-yellow);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .q-tl {
+    left: 0;
+    top: 0;
+  }
+  .q-tr {
+    right: 0;
+    top: 0;
+  }
+  .q-bl {
+    left: 0;
+    bottom: 0;
+  }
+  .q-br {
+    right: 0;
+    bottom: 0;
+  }
+  .big-pic .dim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgba(14, 16, 48, 0.45);
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  /* A prompt line, or a postcard, under the pointer or focus lights up its quadrant. */
+  .big:has(.lines li:is(:hover, :focus-within)) .dim,
+  .big[data-hover] .dim {
+    opacity: 1;
+  }
+  .big:has(li[data-q="tl"]:is(:hover, :focus-within)) .q-tl,
+  .big:has(li[data-q="tr"]:is(:hover, :focus-within)) .q-tr,
+  .big:has(li[data-q="bl"]:is(:hover, :focus-within)) .q-bl,
+  .big:has(li[data-q="br"]:is(:hover, :focus-within)) .q-br,
+  .big[data-hover="tl"] .q-tl,
+  .big[data-hover="tr"] .q-tr,
+  .big[data-hover="bl"] .q-bl,
+  .big[data-hover="br"] .q-br {
+    opacity: 1;
+  }
+  .big:has(li[data-q="tl"]:is(:hover, :focus-within)) .dim,
+  .big[data-hover="tl"] .dim {
+    clip-path: polygon(50% 0, 100% 0, 100% 100%, 0 100%, 0 50%, 50% 50%);
+  }
+  .big:has(li[data-q="tr"]:is(:hover, :focus-within)) .dim,
+  .big[data-hover="tr"] .dim {
+    clip-path: polygon(0 0, 50% 0, 50% 50%, 100% 50%, 100% 100%, 0 100%);
+  }
+  .big:has(li[data-q="bl"]:is(:hover, :focus-within)) .dim,
+  .big[data-hover="bl"] .dim {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 100%, 50% 50%, 0 50%);
+  }
+  .big:has(li[data-q="br"]:is(:hover, :focus-within)) .dim,
+  .big[data-hover="br"] .dim {
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%);
+  }
+  .developing {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: grid;
+    place-content: center;
+    gap: 8px;
+    padding: 24px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(110deg, rgba(23, 27, 61, 0.78) 30%, rgba(60, 70, 150, 0.7) 50%, rgba(23, 27, 61, 0.78) 70%);
+    background-size: 300% 100%;
+    animation: sheen 2.2s linear infinite;
+  }
+  .developing b {
+    max-width: 22ch;
+    margin-inline: auto;
+    font: 780 26px/1.05 var(--display);
+    font-stretch: 85%;
+    text-wrap: balance;
+  }
+  /* Before the first painting: the four live skies, in the order they will be painted. */
+  .preview {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template: 1fr 1fr / 1fr 1fr;
+    gap: 3px;
+  }
+  .preview > div {
+    position: relative;
+    overflow: hidden;
+  }
+  .preview svg.sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .preview * {
+    animation-play-state: paused;
+  }
+  .preview .ambience-stars {
+    display: none;
+  }
+  .preview .empty {
+    display: grid;
+    place-items: center;
+    border: 1.5px dashed var(--color-leader);
+    background: rgba(33, 57, 179, 0.08);
+  }
+  .tile-name {
+    position: absolute;
+    z-index: 1;
+    left: 6px;
+    right: 6px;
+    bottom: 10px;
+    font: 600 10px/1.2 var(--mono);
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 20, 0.7);
+  }
+  .preview .empty .tile-name {
+    position: static;
+    color: var(--color-ink-3);
+    text-shadow: none;
+  }
+
+  .big-msg {
+    grid-area: msg;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-top: 6px;
+  }
+  .big-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    gap: 16px;
+    align-items: start;
+  }
+  .big-head h2 {
+    margin-top: 2px;
+    font: 820 50px/0.94 var(--display);
+    font-stretch: 80%;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .big-head h2 > span:first-child {
+    display: block;
+    margin-bottom: 10px;
+    font: italic 500 16px/1.2 var(--body);
+    letter-spacing: 0;
+    color: var(--color-ink-2);
+  }
+  .big-head h2 .big-places {
+    display: block;
+    margin-top: 14px;
+    font: 650 19px/1.35 var(--body);
+    letter-spacing: 0;
+    color: var(--color-ink-2);
+    text-wrap: balance;
+  }
+  /* A four-colour extrude: the four cards' colours. */
+  .big-head h2 .four {
+    white-space: nowrap;
+    text-shadow:
+      0.03em 0.03em 0 var(--color-verm),
+      0.06em 0.06em 0 var(--color-rose),
+      0.09em 0.09em 0 var(--color-violet),
+      0.12em 0.12em 0 var(--color-spruce);
+  }
+  .block4 {
+    position: relative;
+    height: 156px;
+  }
+  .block4 .grid4 {
+    position: absolute;
+    right: 4px;
+    top: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 60px);
+    filter: drop-shadow(0 0.5px 0.5px rgba(0, 0, 40, 0.35)) drop-shadow(0 2px 2px rgba(0, 0, 40, 0.14));
+    transform: rotate(-2deg);
+  }
+  .block4 .blank-stamp {
+    margin: 2px;
+    width: 56px;
+    height: 68px;
+    font-size: 18px;
+    transform: none;
+  }
+  .block4 .pm {
+    position: absolute;
+    left: -88px;
+    top: 26px;
+    width: 168px;
+    height: 110px;
+    transform: rotate(-14deg);
+    animation: thunk 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) 0.5s backwards;
+  }
+  .note {
+    margin-top: 6px;
+    max-width: 44ch;
+    font-size: 14.5px;
+    color: var(--color-ink-2);
+  }
+  .big-alert,
+  .big-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-bottom: 18px;
+    padding: 10px 12px 10px 14px;
+    border-radius: var(--radius-act);
+    font-size: 14.5px;
+    line-height: 1.4;
+  }
+  .big-alert {
+    border-left: 4px solid var(--color-verm);
+    background: #fdeeea;
+    color: #7a2414;
+  }
+  .big-banner {
+    border-left: 4px solid var(--color-yellow-deep);
+    background: #fff4d6;
+    color: var(--color-ink);
+  }
+  .lines {
+    margin-top: 20px;
+    border-top: 1px solid var(--color-rule);
+  }
+  .lines li {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 12px;
+    margin: 0 -6px;
+    padding: 11px 6px;
+    border-bottom: 1px solid var(--color-rule);
+    border-radius: 4px;
+    font-size: 14.5px;
+    line-height: 1.45;
+    transition: background 0.2s;
+  }
+  .lines li:is(:hover, :focus-within, :focus-visible) {
+    background: var(--color-hover-paper);
+  }
+  .lines li svg {
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+  }
+  .lines li b {
+    display: block;
+    font: 600 10.5px/1.6 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  .rules {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .rules details {
+    flex: 1 1 260px;
+  }
+  .rules summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    list-style: none;
+    font-weight: 600;
+    color: var(--color-ink-2);
+    cursor: pointer;
+  }
+  .rules summary::-webkit-details-marker {
+    display: none;
+  }
+  .rules summary svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.25s;
+  }
+  .rules details[open] summary svg {
+    transform: rotate(90deg);
+  }
+  .rules ol {
+    margin-top: 8px;
+    padding-left: 20px;
+    list-style: decimal;
+    color: var(--color-ink-2);
+    line-height: 1.5;
+  }
+  .rules ol li {
+    margin-bottom: 6px;
+  }
+  .copy {
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    font-weight: 600;
+    color: var(--color-ink-2);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .big-foot {
+    grid-area: foot;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 20px;
+    margin-top: 20px;
+    padding: 16px 0 18px;
+    border-top: 1px solid var(--color-rule);
+  }
+  .addr {
+    display: flex;
+    gap: 34px;
+    font-size: 14px;
+  }
+  .addr dt {
+    font: 600 10px/1.6 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  .addr dd {
+    font-weight: 600;
+  }
+  .big-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .big-gap {
+    padding-bottom: 20px;
+  }
+
+  /* ---------- Picking up a postcard ---------- */
+
+  /* A button over the whole card; the card's own buttons sit above it. */
+  .pickup {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: zoom-in;
+  }
+  .pickup:focus-visible {
+    outline-offset: 6px;
+  }
+  .acts,
+  .stale,
+  .msg-alert {
+    position: relative;
+    z-index: 5;
+  }
+
+  .held-dialog {
+    width: min(820px, calc(100vw - 24px));
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    margin: auto;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .held-dialog::backdrop {
+    background: rgba(12, 18, 70, 0.84);
+  }
+  /* Lifted off the desk: it rises, grows and straightens. */
+  .held {
+    perspective: 2000px;
+    animation: lift 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .flip {
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+  .held[data-side="back"] .flip {
+    transform: rotateY(180deg);
+  }
+  .face {
+    grid-area: 1 / 1;
+    padding: 14px;
+    border-radius: var(--radius-big);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-big);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    container-type: inline-size;
+  }
+  .face.back {
+    transform: rotateY(180deg);
+  }
+  .face.front {
+    display: grid;
+  }
+  .pic.pic-large {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 3 / 2;
+  }
+  .pic-large .pic-painted {
+    animation: none;
+  }
+  .pic-large .caption {
+    left: 24px;
+    right: 20px;
+    bottom: 22px;
+  }
+  .pic-large .name {
+    font-size: 64px;
+    text-shadow: 2px 2px 0 var(--c), 4px 4px 0 var(--c), 5px 5px 0 var(--c), 6px 6px 16px rgba(0, 0, 20, 0.35);
+  }
+  .pic-large .name.is-medium {
+    font-size: 48px;
+  }
+  .pic-large .name.is-small {
+    font-size: 38px;
+  }
+  .pic-large .region {
+    font-size: 16px;
+  }
+  .pic-large .pic-tag {
+    top: 16px;
+    left: 16px;
+    font-size: 12px;
+  }
+  /* The back: the message on the left, stamp, postmark and address on the right. */
+  .face.back {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    padding: 26px 28px;
+  }
+  .back-msg {
+    padding-right: 26px;
+    border-right: 1px solid var(--color-rule);
+  }
+  .back-msg .temp {
+    font-size: 104px;
+  }
+  .back-msg .cond {
+    margin-top: 14px;
+    font-size: 20px;
+  }
+  .back-msg .cond span {
+    max-width: none;
+    font-size: 16px;
+  }
+  .back-msg .facts dt {
+    font-size: 16px;
+  }
+  .back-msg .facts dd {
+    font-size: 15px;
+  }
+  .back-msg .facts dd small {
+    font-size: 12px;
+  }
+  .back-time {
+    margin-top: 14px;
+    font: 500 13px/1.4 var(--mono);
+    color: var(--color-ink-2);
+  }
+  .back-side {
+    display: flex;
+    flex-direction: column;
+    padding-left: 26px;
+  }
+  /* The franking at one and a half times the desk size, grown from its top right corner. */
+  .back-side .frank {
+    align-self: flex-end;
+    width: 158px;
+    margin-bottom: 56px;
+    transform: scale(1.5);
+    transform-origin: top right;
+  }
+  .back-side .frank .pm {
+    animation: none;
+  }
+  .address {
+    margin-top: auto;
+    font-style: normal;
+  }
+  .address p {
+    padding: 8px 2px 4px;
+    border-bottom: 1px solid var(--color-leader);
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .address p:first-child {
+    font: 800 24px/1.1 var(--display);
+    font-stretch: 90%;
+  }
+  .address .coords {
+    font: 500 13px/1.4 var(--mono);
+    color: var(--color-ink-2);
+  }
+  .held-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .held-bar .btn-yellow {
+    height: 40px;
+    padding: 0 18px;
+  }
+  .held-bar .btn-line {
+    height: 40px;
+  }
+
+  /* "Live sky" on the picture side before painting, with a slow pulsing dot. */
+  .pic-tag.is-live i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--color-yellow);
+    vertical-align: 1px;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  /* ---------- Toast ---------- */
+
+  .toast {
+    position: fixed;
+    z-index: 50;
+    left: 50%;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: calc(100% - 32px);
+    padding: 8px 8px 8px 18px;
+    border-radius: var(--radius-field);
+    background: var(--color-ink);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 500;
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 30, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    transform: translateX(-50%);
+    animation: toast-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .toast p {
+    padding: 6px 0;
+  }
+
+  /* ---------- Footer ---------- */
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px 32px;
+    margin-top: 96px;
+    padding: 24px 0 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .foot ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+  }
+  .foot a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .foot a:hover {
+    color: var(--color-yellow);
+  }
+  .foot .logo {
+    width: 26px;
+    height: 17px;
+  }
+  .foot .wordmark {
+    font-size: 16px;
+  }
+
+  /* ---------- Large view of the painting ---------- */
+
+  .lightbox {
+    margin: auto;
+    max-width: min(94vw, 94vh);
+    max-height: none;
+    padding: 14px;
+    border: 0;
+    border-radius: var(--radius-big);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-dialog);
+  }
+  .lightbox::backdrop {
+    background: rgba(12, 18, 70, 0.82);
+  }
+  .lightbox-frame {
+    position: relative;
+    width: min(86vw, 76vh);
+    aspect-ratio: 1;
+    overflow: hidden;
+  }
+  .lightbox-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .lightbox-bar h2 {
+    font: 780 24px/1 var(--display);
+    font-stretch: 85%;
+  }
+  .lightbox-bar p {
+    max-width: 60ch;
+    color: var(--color-ink-2);
+    font-size: 13px;
+  }
+}
+
+/* ---------- Live sky details ---------- */
+
+.twinkle {
+  animation: tw 4s ease-in-out infinite alternate;
+}
+
+/* Snow is information: stronger than the ambience default (unlayered, like it), so it shows on a pale daytime sky too. */
+.pic .ambience-snow {
+  opacity: calc(0.45 + var(--snow-level, 2) * 0.15);
+}
+.pic .ambience-snow-near {
+  opacity: 0.75;
+}
+.pic .ambience-snow-dense {
+  opacity: 0.6;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes lift {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(28px) scale(0.9) rotate(var(--rot, -2deg));
+  }
+}
+
+@keyframes bar-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) rotate(calc(var(--rot) * -1.6)) scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--rot));
+  }
+}
+
+@keyframes thunk {
+  from {
+    opacity: 0;
+    transform: rotate(var(--pmr, -7deg)) scale(1.4);
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+@keyframes sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes develop {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+}
+
+@keyframes tw {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
   }
 }
 
@@ -37,33 +1947,8 @@ body {
   }
 }
 
-/* The sky-coloured preview panels fade away one by one to reveal the painted picture. */
-@keyframes veil-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes paint-pulse {
-  50% {
-    opacity: 0.55;
-  }
-}
-
-.animate-rise {
-  animation: rise 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
 .animate-zoom-in {
   animation: zoom-in 220ms ease-out both;
-}
-
-.animate-veil-out {
-  animation: veil-out 800ms ease-out both;
-}
-
-.animate-paint-pulse {
-  animation: paint-pulse 1.6s ease-in-out infinite;
 }
 
 /*
@@ -117,6 +2002,8 @@ body {
 }
 
 .ambience-snow,
+.ambience-snow-near,
+.ambience-snow-dense,
 .ambience-stars {
   background-color: currentColor;
   -webkit-mask-repeat: repeat;
@@ -124,13 +2011,45 @@ body {
 }
 
 
-.ambience-snow {
-  opacity: 0.28;
+.ambience-snow,
+.ambience-snow-near,
+.ambience-snow-dense {
+  /* Light, moderate or heavy snow: more visible and faster as it falls harder. */
+  opacity: calc(0.12 + var(--snow-level, 2) * 0.08);
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Ccircle cx='14' cy='20' r='2'/%3E%3Ccircle cx='60' cy='8' r='1.5'/%3E%3Ccircle cx='100' cy='30' r='2.5'/%3E%3Ccircle cx='32' cy='64' r='1.8'/%3E%3Ccircle cx='80' cy='74' r='2.2'/%3E%3Ccircle cx='124' cy='90' r='1.6'/%3E%3Ccircle cx='50' cy='112' r='2.4'/%3E%3Ccircle cx='110' cy='128' r='1.8'/%3E%3Ccircle cx='8' cy='124' r='1.5'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Ccircle cx='14' cy='20' r='2'/%3E%3Ccircle cx='60' cy='8' r='1.5'/%3E%3Ccircle cx='100' cy='30' r='2.5'/%3E%3Ccircle cx='32' cy='64' r='1.8'/%3E%3Ccircle cx='80' cy='74' r='2.2'/%3E%3Ccircle cx='124' cy='90' r='1.6'/%3E%3Ccircle cx='50' cy='112' r='2.4'/%3E%3Ccircle cx='110' cy='128' r='1.8'/%3E%3Ccircle cx='8' cy='124' r='1.5'/%3E%3C/svg%3E");
   -webkit-mask-size: 140px 140px;
   mask-size: 140px 140px;
-  animation: fall-140 7s linear infinite;
+  animation: fall-140 calc(9.5s - var(--snow-level, 2) * 1.5s) linear infinite;
+}
+
+/* Moderate snow adds big, close flakes; heavy snow adds a dense curtain of small ones. */
+.ambience-snow-near {
+  opacity: 0.6;
+  -webkit-mask-size: 240px 240px;
+  mask-size: 240px 240px;
+  animation: fall-240 5s linear infinite;
+}
+
+.ambience-snow-dense {
+  opacity: 0.45;
+  -webkit-mask-size: 76px 76px;
+  mask-size: 76px 76px;
+  animation: fall-76 4.5s linear infinite;
+}
+
+@keyframes fall-240 {
+  to {
+    -webkit-mask-position: 0 240px;
+    mask-position: 0 240px;
+  }
+}
+
+@keyframes fall-76 {
+  to {
+    -webkit-mask-position: 0 76px;
+    mask-position: 0 76px;
+  }
 }
 
 .ambience-stars {
@@ -143,8 +2062,9 @@ body {
 
 .ambience-fog {
   background:
-    radial-gradient(ellipse 45% 12% at 25% 35%, rgb(255 255 255 / 0.55), transparent 70%),
-    radial-gradient(ellipse 40% 10% at 75% 65%, rgb(255 255 255 / 0.45), transparent 70%);
+    radial-gradient(ellipse 70% 22% at 25% 45%, rgb(255 255 255 / 0.4), transparent 70%),
+    radial-gradient(ellipse 65% 20% at 75% 72%, rgb(255 255 255 / 0.38), transparent 70%),
+    linear-gradient(to top, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0.12) 70%);
   background-size: 200% 100%;
   animation: drift 18s linear infinite alternate;
 }
@@ -167,7 +2087,8 @@ body {
     radial-gradient(ellipse 28% 10% at 68% 34%, rgb(255 255 255 / var(--cloud)), transparent 70%),
     radial-gradient(ellipse 40% 12% at 45% 62%, rgb(255 255 255 / calc(var(--cloud) * 0.7)), transparent 70%);
   background-size: 160% 100%;
-  animation: drift 40s ease-in-out infinite alternate;
+  /* The stronger the wind, the faster the clouds move. */
+  animation: drift var(--drift, 40s) ease-in-out infinite alternate;
 }
 
 .ambience-clouds {
@@ -191,7 +2112,8 @@ body {
 .rain-layer {
   position: absolute;
   inset: -25%;
-  transform: rotate(12deg);
+  /* Tilted by the wind: nearly straight in still air, slanting in a gale. */
+  transform: rotate(var(--slant, 12deg));
   background-color: currentColor;
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
@@ -202,7 +2124,7 @@ body {
 
 .rain-far {
   --tile: 70px;
-  opacity: 0.16;
+  opacity: 0.6;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2770%27 height=%2770%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%276%27 y=%273%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2727%27 y=%2738%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2748%27 y=%2715%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2760%27 y=%2752%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2715%27 y=%2757%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2738%27 y=%2760%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2770%27 height=%2770%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%276%27 y=%273%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2727%27 y=%2738%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2748%27 y=%2715%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2760%27 y=%2752%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2715%27 y=%2757%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3Crect x=%2738%27 y=%2760%27 width=%271%27 height=%277%27 rx=%270.5%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   animation-duration: 1.1s;
@@ -210,7 +2132,7 @@ body {
 
 .rain-mid {
   --tile: 120px;
-  opacity: 0.22;
+  opacity: 0.6;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%2710%27 y=%275%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2744%27 y=%2742%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2780%27 y=%2712%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%27102%27 y=%2770%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2724%27 y=%2784%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2766%27 y=%2796%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%27112%27 y=%2730%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%2710%27 y=%275%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2744%27 y=%2742%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2780%27 y=%2712%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%27102%27 y=%2770%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2724%27 y=%2784%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%2766%27 y=%2796%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3Crect x=%27112%27 y=%2730%27 width=%271.4%27 height=%2713%27 rx=%270.7%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   animation-duration: 0.8s;
@@ -218,10 +2140,36 @@ body {
 
 .rain-near {
   --tile: 170px;
-  opacity: 0.3;
+  opacity: 0.7;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27170%27 height=%27170%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%2714%27 y=%2710%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2770%27 y=%2760%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%27120%27 y=%2720%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%27150%27 y=%27110%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2740%27 y=%27130%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2798%27 y=%27140%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27170%27 height=%27170%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%270%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-opacity=%270%27/%3E%3Cstop offset=%271%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%2714%27 y=%2710%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2770%27 y=%2760%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%27120%27 y=%2720%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%27150%27 y=%27110%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2740%27 y=%27130%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3Crect x=%2798%27 y=%27140%27 width=%271.8%27 height=%2722%27 rx=%270.9%27 fill=%27url(%23g)%27/%3E%3C/svg%3E");
   animation-duration: 0.55s;
+}
+
+/* Drizzle: finer, denser drops that fall more slowly than rain. */
+.rain-drizzle .rain-far {
+  --tile: 52px;
+  opacity: 0.55;
+  animation-duration: 1.7s;
+}
+
+.rain-drizzle .rain-mid {
+  --tile: 84px;
+  opacity: 0.55;
+  animation-duration: 1.3s;
+}
+
+.rain-drizzle .rain-near {
+  --tile: 116px;
+  opacity: 0.6;
+  animation-duration: 1s;
+}
+
+.rain-sheet,
+.rain-drizzle .rain-sheet {
+  --tile: 72px;
+  opacity: 0.55;
+  animation-duration: 0.42s;
 }
 
 @keyframes rain-fall {
@@ -231,36 +2179,25 @@ body {
   }
 }
 
-/* Frost: fine rime, thick at the edges and clear in the middle (--clear), and glinting ice crystals. */
+/* Frost: fine rime, thick at the edges and clear in the middle (--clear). */
+
 .frost-rime {
   border-radius: inherit;
   background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27220%27 height=%27220%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%273%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.6 -0.55%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E");
   background-size: 220px 220px;
+  filter: drop-shadow(0 0 0.7px rgb(60 95 150 / 0.7));
   -webkit-mask-image: radial-gradient(ellipse 72% 68% at 50% 50%, transparent var(--clear), black 100%);
   mask-image: radial-gradient(ellipse 72% 68% at 50% 50%, transparent var(--clear), black 100%);
 }
 
-.frost-crystal {
-  filter: drop-shadow(0 0 2px rgb(120 175 230 / 0.9));
-  animation: glint 4s ease-in-out infinite;
-}
-
-@keyframes glint {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 /* Extreme temperatures glow on the card's inner edge. */
+/* Frost: a band of ice along the edges, thicker the colder it is (--frost, 0 to 1), light enough to show on a pale sky. */
 .ambience-frost {
   border-radius: inherit;
   box-shadow:
-    inset 0 0 0 1.5px rgb(255 255 255 / 0.6),
-    inset 0 0 64px rgb(160 210 255 / 0.75);
+    inset 0 0 0 1.5px rgb(255 255 255 / 0.8),
+    inset 0 0 calc(8px + 14px * var(--frost, 0.5)) calc(2px + 7px * var(--frost, 0.5)) rgb(238 246 255 / 0.75),
+    inset 0 0 calc(30px + 40px * var(--frost, 0.5)) rgb(150 200 250 / 0.6);
 }
 
 .ambience-heat {
@@ -276,99 +2213,323 @@ body {
   animation: flash 7s linear infinite;
 }
 
-/* Weather icons: a soft shadow so white clouds stand out on light skies, and small motions. */
+/* ---------- Layout: desktop from 1280px, tablet from 768px, phone below ---------- */
 
-.weather-icon {
-  filter: drop-shadow(0 2px 3px rgb(22 32 42 / 0.2));
-  overflow: visible;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@media (width < 1280px) {
+  .headline {
+    font-size: 56px;
+  }
+  /* 2×2, the same arrangement as the painting's panels. */
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 44px 40px;
+    max-width: 760px;
+    margin-inline: auto;
+  }
+  .big {
+    grid-template-columns: minmax(380px, 1fr) minmax(0, 1fr);
+    gap: 0 32px;
   }
 }
 
-@keyframes float {
-  50% {
-    transform: translateY(-1.5px);
+/* The sets go under the summary once both no longer fit side by side. */
+@media (width < 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sets {
+    max-width: 420px;
+  }
+  .toolbar-row > div:first-child {
+    max-width: none;
   }
 }
 
-@keyframes drop-fall {
-  from {
-    transform: translateY(-3px);
-    opacity: 0.35;
+@media (width < 1000px) {
+  .big {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "pic" "msg" "foot";
+    row-gap: 24px;
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 20px 20px 0;
   }
-  30% {
-    opacity: 1;
-  }
-  to {
-    transform: translateY(5px);
-    opacity: 0.35;
-  }
-}
-
-@keyframes flake-fall {
-  from {
-    transform: translateY(-2px) rotate(0deg);
-    opacity: 0.45;
-  }
-  30% {
-    opacity: 1;
-  }
-  to {
-    transform: translateY(4px) rotate(40deg);
-    opacity: 0.45;
+  .big-pic {
+    justify-self: center;
+    width: 100%;
+    max-width: 640px;
   }
 }
 
-@keyframes bolt {
-  0%,
-  86%,
-  100% {
-    opacity: 1;
+@media (width < 768px) {
+  .top {
+    padding-top: 18px;
   }
-  88% {
-    opacity: 0.2;
+  .brand-row {
+    gap: 8px;
   }
-  90% {
-    opacity: 1;
+  .wordmark {
+    font-size: 17px;
+    font-stretch: 104%;
+    white-space: nowrap;
   }
-  92% {
-    opacity: 0.4;
+  .logo {
+    width: 28px;
+    height: 18px;
+  }
+  .tagline {
+    font-size: 12px;
+  }
+
+  .hero {
+    padding: 34px 0 30px;
+  }
+  .headline {
+    font-size: 40px;
+    line-height: 1.02;
+  }
+  .sub {
+    max-width: 36ch;
+    font-size: 17px;
+  }
+
+
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+    padding: 0 4px;
+  }
+  .pc:nth-child(n) {
+    margin-top: 0;
+  }
+  .pc:nth-child(1) {
+    --rot: -1.4deg;
+  }
+  .pc:nth-child(2) {
+    --rot: 1.2deg;
+  }
+  .pc:nth-child(3) {
+    --rot: -0.9deg;
+  }
+  .pc:nth-child(4) {
+    --rot: 1.3deg;
+  }
+  .name {
+    font-size: 34px;
+  }
+  .name.is-medium {
+    font-size: 28px;
+  }
+  .name.is-small {
+    font-size: 23px;
+  }
+  .pic,
+  .blank-pic {
+    aspect-ratio: 300 / 214;
+  }
+  .acts button,
+  .blank .acts .btn-ink {
+    height: 44px;
+  }
+
+  .big {
+    row-gap: 20px;
+    margin-top: 64px;
+    padding: 12px 12px 0;
+    transform: rotate(-0.5deg);
+  }
+  .big-msg {
+    padding: 0 6px;
+  }
+  .big-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .big-head h2 {
+    font-size: 34px;
+  }
+  .block4 {
+    order: -1;
+    height: 124px;
+  }
+  .block4 .grid4 {
+    grid-template-columns: repeat(2, 52px);
+    right: 8px;
+    top: 4px;
+  }
+  .block4 .stamp {
+    width: 52px;
+    height: 62px;
+    padding: 5px;
+  }
+  .block4 .stamp svg {
+    width: 28px;
+    height: 20px;
+  }
+  .block4 .blank-stamp {
+    width: 48px;
+    height: 58px;
+  }
+  .block4 .pm {
+    left: auto;
+    right: 58px;
+    top: 14px;
+    width: 160px;
+    height: 105px;
+    transform: rotate(-10deg);
+  }
+  .developing b {
+    font-size: 20px;
+  }
+  .airmail {
+    width: 100%;
+  }
+  .airmail-label {
+    font-size: 26px;
+  }
+  .big-foot {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 0;
+    padding: 14px 6px 16px;
+  }
+  .big-acts .btn-ink {
+    flex: 1;
+    height: 44px;
+  }
+
+  /* The sticky paint bar, shown while the big card's paint button is off screen. */
+  .paint-bar {
+    position: fixed;
+    z-index: 40;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(23, 33, 120, 0.94);
+    box-shadow: 0 -10px 30px -10px rgba(0, 0, 40, 0.7);
+    animation: bar-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .paint-bar .airmail {
+    width: 100%;
+    padding: 5px;
+    transform: none;
+  }
+  .paint-bar .airmail-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+  }
+  .paint-bar .airmail-label {
+    font-size: 22px;
+  }
+  .paint-bar .airmail-label svg {
+    width: 22px;
+    height: 22px;
+  }
+  .paint-bar .par-avion span:last-child {
+    display: none;
+  }
+  /* Notes rise above the bar. */
+  body:has(.paint-bar) .toast {
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+  .page:has(.paint-bar) .foot {
+    padding-bottom: 110px;
+  }
+
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 72px;
+  }
+
+  /* Picked up on a phone: the back stacks, stamp and postmark first. */
+  .pic.pic-large {
+    aspect-ratio: 4 / 5;
+  }
+  .pic-large .name {
+    font-size: 40px;
+  }
+  .pic-large .name.is-medium {
+    font-size: 32px;
+  }
+  .pic-large .name.is-small {
+    font-size: 26px;
+  }
+  .face.back {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 18px 22px;
+  }
+  .back-msg {
+    padding: 0;
+    border: 0;
+  }
+  .back-msg .temp {
+    font-size: 80px;
+  }
+  .back-side {
+    display: contents;
+  }
+  .back-side .frank {
+    order: -1;
+    justify-self: end;
+    margin-bottom: 22px;
+    transform: scale(1.15);
+  }
+  .address {
+    order: 1;
+    margin-top: 18px;
+  }
+  .address p:first-child {
+    font-size: 20px;
+  }
+  .held-bar .btn-line,
+  .held-bar .btn-yellow {
+    height: 44px;
   }
 }
 
-.icon-spin {
-  animation: spin 40s linear infinite;
+/* Narrow cards (about 1280 to 1320px wide, four in a row): a smaller postmark and temperature so nothing collides. */
+@container (width < 290px) {
+  .msg-top {
+    grid-template-columns: minmax(0, 1fr) 146px;
+  }
+  .frank .pm {
+    width: 138px;
+    height: 91px;
+  }
+  .frank .stamp {
+    width: 54px;
+    height: 65px;
+  }
+  .temp {
+    font-size: 48px;
+  }
 }
 
-.icon-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.icon-drop {
-  animation: drop-fall 1.1s linear infinite;
-}
-
-.icon-flake {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: flake-fall 2.4s ease-in-out infinite;
-}
-
-.icon-bolt {
-  animation: bolt 4s linear infinite;
-}
-
-/* Motion off on request: every animation jumps to its end state once. */
+/* Motion off on request. Rain and snow stay visible as still streaks and flakes: they are information. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  /* Turning a card over becomes a crossfade. */
+  .held[data-side] .flip {
+    transform: none !important;
+  }
+  .face.back {
+    transform: none;
+  }
+  .face {
+    transition: opacity 0.25s ease !important;
+  }
+  .held[data-side="front"] .face.back,
+  .held[data-side="back"] .face.front {
+    opacity: 0;
   }
 }
