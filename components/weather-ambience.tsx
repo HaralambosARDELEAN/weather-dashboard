@@ -4,7 +4,18 @@ function Layer({ name }: { name: string }) {
   return <div aria-hidden="true" className={`ambience ambience-${name}`} />;
 }
 
-/** A quiet moving sky behind a card: sun or moon, drifting clouds, rain, snow, fog. Decorative only. */
+/** Three layers of rain at different depths: far, middle and near. */
+function Rain() {
+  return (
+    <div aria-hidden="true" className="ambience overflow-hidden">
+      <div className="rain-layer rain-far" />
+      <div className="rain-layer rain-mid" />
+      <div className="rain-layer rain-near" />
+    </div>
+  );
+}
+
+/** A quiet moving sky behind a card: sun or moon light, drifting clouds, rain, snow, fog. Decorative only. */
 export function WeatherAmbience({ code, isDay }: { code: number; isDay: boolean }) {
   switch (describeWeather(code).kind) {
     case "clear":
@@ -21,13 +32,13 @@ export function WeatherAmbience({ code, isDay }: { code: number; isDay: boolean 
     case "fog":
       return <Layer name="fog" />;
     case "rain":
-      return <Layer name="rain" />;
+      return <Rain />;
     case "snow":
       return <Layer name="snow" />;
     case "storm":
       return (
         <>
-          <Layer name="rain" />
+          <Rain />
           <Layer name="flash" />
         </>
       );

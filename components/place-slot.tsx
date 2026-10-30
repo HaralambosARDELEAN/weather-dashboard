@@ -9,6 +9,8 @@ type Props = {
   index: number;
   place: Place | null;
   replacing: boolean;
+  /** The very first slot of an empty dashboard gets the focus and a suggestion. */
+  first?: boolean;
   onPick: (place: Place) => string | null;
   onWeather: (placeId: number, weather: Weather) => void;
   onReplace: () => void;
@@ -16,7 +18,7 @@ type Props = {
   onRemove: () => void;
 };
 
-export function PlaceSlot({ index, place, replacing, onPick, onWeather, onReplace, onCancel, onRemove }: Props) {
+export function PlaceSlot({ index, place, replacing, first, onPick, onWeather, onReplace, onCancel, onRemove }: Props) {
   if (place && !replacing) {
     return (
       <WeatherCard
@@ -33,12 +35,17 @@ export function PlaceSlot({ index, place, replacing, onPick, onWeather, onReplac
     <section
       aria-label={`Place ${index + 1}`}
       style={{ animationDelay: `${index * 80}ms` }}
-      className="animate-rise flex min-h-72 flex-col gap-4 rounded-2xl border-2 border-dashed border-slate/30 bg-white/40 p-5"
+      className="animate-rise relative flex min-h-[27.5rem] flex-col gap-4 rounded-2xl border-2 border-dashed border-slate/30 bg-white/40 p-5 focus-within:z-30"
     >
       <div className="flex justify-end text-slate">
         <QuadrantMark index={index} />
       </div>
-      <PlaceSearch onPick={onPick} onCancel={place ? onCancel : undefined} autoFocus={replacing} />
+      <PlaceSearch
+        onPick={onPick}
+        onCancel={place ? onCancel : undefined}
+        autoFocus={replacing || first}
+        hint={first ? "Try Springfield: there is more than one." : undefined}
+      />
     </section>
   );
 }

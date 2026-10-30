@@ -72,7 +72,10 @@ export function ImagePanel({ slots, weather }: Props) {
   const showPicture = picture !== null && !loading;
 
   return (
-    <section aria-labelledby="picture-heading" className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+    <section
+      aria-labelledby="picture-heading"
+      className="mx-auto flex w-full max-w-2xl flex-col gap-4 xl:sticky xl:top-6 xl:max-w-none xl:self-start"
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="picture-heading" className="font-display text-4xl font-extrabold uppercase leading-none">
           The picture

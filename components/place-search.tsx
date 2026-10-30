@@ -10,6 +10,8 @@ type Props = {
   onPick: (place: Place) => string | null;
   onCancel?: () => void;
   autoFocus?: boolean;
+  /** A short suggestion shown under the empty box, for someone who has not started yet. */
+  hint?: string;
 };
 
 type Search =
@@ -18,7 +20,7 @@ type Search =
   | { status: "done"; query: string; results: Place[] }
   | { status: "error"; message: string };
 
-export function PlaceSearch({ onPick, onCancel, autoFocus }: Props) {
+export function PlaceSearch({ onPick, onCancel, autoFocus, hint }: Props) {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState<Search>({ status: "idle" });
   const [active, setActive] = useState(0);
@@ -50,11 +52,6 @@ export function PlaceSearch({ onPick, onCancel, autoFocus }: Props) {
   const results = search.status === "done" ? search.results : [];
   const open = focused && results.length > 0;
 
-  // Keep the highlighted option in view when moving through a long list with the arrow keys.
-  useEffect(() => {
-    if (open) document.getElementById(`${id}-option-${active}`)?.scrollIntoView({ block: "nearest" });
-  }, [open, active, id]);
-
   function change(value: string) {
     setQuery(value);
     setPickError(null);
@@ -75,7 +72,10 @@ export function PlaceSearch({ onPick, onCancel, autoFocus }: Props) {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const step = event.key === "ArrowDown" ? 1 : -1;
-      setActive((i) => (i + step + results.length) % results.length);
+      const next = (active + step + results.length) % results.length;
+      setActive(next);
+      // Keep the highlighted option in view in a long list (only for the keyboard, not on hover).
+      document.getElementById(`${id}-option-${next}`)?.scrollIntoView({ block: "nearest" });
     }
     if (event.key === "Enter") {
       event.preventDefault();
@@ -89,6 +89,7 @@ export function PlaceSearch({ onPick, onCancel, autoFocus }: Props) {
   if (!message && search.status === "done" && results.length === 0) {
     message = `No places match “${search.query}”. Check the spelling or try a nearby town.`;
   }
+  if (!message && search.status === "idle" && query === "" && hint) message = hint;
   const isError = pickError !== null || search.status === "error";
 
   return (

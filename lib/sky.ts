@@ -43,6 +43,20 @@ export function skyForWeather(weather: Weather, timezone: string, now: Date): Sk
   return skyFor(describeWeather(weather.weatherCode).kind, weather.isDay, localHour(timezone, now));
 }
 
+export type TemperatureEffect = { kind: "frost" | "heat"; level: number };
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+/**
+ * Frost on the card from freezing point, growing until -30 °C; heat from 30 °C, growing until 45 °C.
+ * level goes from 0 (just started) to 1 (full).
+ */
+export function temperatureEffect(celsius: number): TemperatureEffect | null {
+  if (celsius <= 0) return { kind: "frost", level: clamp01(-celsius / 30) };
+  if (celsius >= 30) return { kind: "heat", level: clamp01((celsius - 30) / 15) };
+  return null;
+}
+
 export function skyStyle(sky: Sky): CSSProperties {
   return {
     backgroundColor: sky.bottom,

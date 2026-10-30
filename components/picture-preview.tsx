@@ -5,7 +5,7 @@ import { skyForWeather, skyStyle } from "@/lib/sky";
 import type { Slots } from "@/lib/storage";
 import { useNow } from "./use-now";
 import { WeatherAmbience } from "./weather-ambience";
-import { WeatherSymbol } from "./weather-symbol";
+import { WeatherIcon } from "./weather-icon";
 
 type Props = {
   slots: Slots;
@@ -44,8 +44,8 @@ export function PicturePreview({ slots, weather, painting }: Props) {
             }`}
           >
             {current && <WeatherAmbience code={current.weatherCode} isDay={current.isDay} />}
-            {current && <WeatherSymbol code={current.weatherCode} className="relative mb-auto size-8" />}
-            <p className="relative font-display text-2xl font-extrabold uppercase leading-none sm:text-3xl">{place.name}</p>
+            {current && <WeatherIcon code={current.weatherCode} isDay={current.isDay} className="relative -ml-1 mb-auto size-16" />}
+            <p className="relative font-display text-2xl font-extrabold uppercase leading-none break-words sm:text-3xl">{place.name}</p>
             {current && <p className="relative mt-1 font-mono text-sm">{Math.round(current.temperature)}°C</p>}
           </div>
         );

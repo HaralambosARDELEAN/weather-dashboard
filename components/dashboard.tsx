@@ -18,9 +18,9 @@ export function Dashboard() {
   // On the server and during the first render in the browser the saved places are not known yet.
   if (!slots) {
     return (
-      <div aria-busy="true" className="grid gap-4 sm:grid-cols-2 lg:w-1/2">
+      <div aria-busy="true" className="grid gap-4 sm:grid-cols-2 xl:w-1/2">
         {Array.from({ length: SLOT_COUNT }, (_, i) => (
-          <div key={i} className="min-h-72 rounded-2xl border-2 border-dashed border-slate/30" />
+          <div key={i} className="min-h-[27.5rem] rounded-2xl border-2 border-dashed border-slate/30" />
         ))}
       </div>
     );
@@ -42,7 +42,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-2">
+    <div className="grid gap-10 xl:grid-cols-2">
       <div className="grid content-start gap-4 sm:grid-cols-2">
         {current.map((place, index) => (
           <PlaceSlot
@@ -50,6 +50,7 @@ export function Dashboard() {
             index={index}
             place={place}
             replacing={replacing === index}
+            first={index === 0 && current.every((other) => other === null)}
             onPick={(next) => pick(index, next)}
             onWeather={shareWeather}
             onReplace={() => setReplacing(index)}
