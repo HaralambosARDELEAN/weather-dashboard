@@ -11,6 +11,21 @@ const options = {
   networkMessage: "Could not reach the weather service. Check your connection and try again.",
 };
 
+// Open-Meteo answers 429 "Too many concurrent requests" when several requests arrive at once
+// (four cards loading, or the picture asking for four places). Those are worth one or two more tries.
+const RETRY_DELAYS_MS = [400, 1200];
+const TRANSIENT = new Set([429, 502, 503, 504]);
+
+async function fetchOpenMeteo(url: string) {
+  let response = await request(url, options);
+  for (const delay of RETRY_DELAYS_MS) {
+    if (!TRANSIENT.has(response.status)) break;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    response = await request(url, options);
+  }
+  return response;
+}
+
 const geoResultSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -55,7 +70,7 @@ function toPlace(result: GeoResult): Place | null {
 
 export async function searchPlaces(query: string): Promise<Place[]> {
   const params = new URLSearchParams({ name: query, count: "8", language: "en", format: "json" });
-  const response = await request(`${GEOCODING_URL}/search?${params}`, options);
+  const response = await fetchOpenMeteo(`${GEOCODING_URL}/search?${params}`);
   if (!response.ok) throw new ApiError("The place search is not available right now. Try again in a moment.", 502);
 
   const parsed = searchResponseSchema.safeParse(response.body);
@@ -65,7 +80,7 @@ export async function searchPlaces(query: string): Promise<Place[]> {
 
 export async function getPlace(id: number): Promise<Place> {
   const params = new URLSearchParams({ id: String(id), language: "en" });
-  const response = await request(`${GEOCODING_URL}/get?${params}`, options);
+  const response = await fetchOpenMeteo(`${GEOCODING_URL}/get?${params}`);
   const parsed = geoResultSchema.safeParse(response.body);
   const place = response.ok && parsed.success ? toPlace(parsed.data) : null;
   if (!place) throw new ApiError("This place could not be found any more. Replace it and try again.", 502);
@@ -83,7 +98,7 @@ export async function getWeather(place: Pick<Place, "latitude" | "longitude" | "
     temperature_unit: "celsius",
     wind_speed_unit: "kmh",
   });
-  const response = await request(`${FORECAST_URL}?${params}`, options);
+  const response = await fetchOpenMeteo(`${FORECAST_URL}?${params}`);
   if (!response.ok) throw new ApiError("The weather service returned an error. Try again in a moment.", 502);
 
   const parsed = forecastSchema.safeParse(response.body);

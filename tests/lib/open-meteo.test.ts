@@ -51,6 +51,35 @@ describe("searchPlaces", () => {
   });
 });
 
+describe("when Open-Meteo is busy", () => {
+  afterEach(() => vi.useRealTimers());
+  const busy = () => json({ error: true, reason: "Too many concurrent requests" }, 429);
+
+  it("waits and tries again", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    mockFetch(() => (++calls === 1 ? busy() : json(forecast())));
+    const weather = getWeather({ latitude: 45.75, longitude: 21.23, timezone: "Europe/Bucharest" });
+    await vi.runAllTimersAsync();
+    await expect(weather).resolves.toMatchObject({ temperature: 11.7 });
+    expect(calls).toBe(2);
+  });
+
+  it("gives up after two more tries", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    mockFetch(() => {
+      calls++;
+      return busy();
+    });
+    const search = searchPlaces("Timi");
+    const outcome = expect(search).rejects.toMatchObject({ status: 502 });
+    await vi.runAllTimersAsync();
+    await outcome;
+    expect(calls).toBe(3);
+  });
+});
+
 describe("getPlace", () => {
   it("looks a place up by id", async () => {
     const fake = mockFetch(() => json(geoResult(683506, "Timișoara")));
