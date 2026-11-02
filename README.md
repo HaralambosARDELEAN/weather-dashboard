@@ -2,6 +2,8 @@
 
 Postcards of the sky in four places, right now. Pick up to four places and each one arrives as a postcard: a live sky drawn from its real weather and local time on the front, and the weather written on the back. Then paint all four as one AI-generated picture, a 2x2 grid with one panel per place, and each postcard gets its own panel. The prompt is built in code from the weather data and shown as the big card's message.
 
+**Live demo: [skypost.ardeleanharalambie21.workers.dev](https://skypost.ardeleanharalambie21.workers.dev)** (painting is limited there: 10 pictures per visitor per hour, 25 a day in all).
+
 ![Skypost with four postcards and the painted picture](docs/screenshot.jpg)
 
 ## Run it
@@ -25,6 +27,17 @@ Tests: `npm test` (no network or key needed). Production build: `npm run build &
 
 The key is read only on the server and never sent to the browser. Without a key, the postcards work and painting shows a message saying the key is missing.
 
+### Deploy to Cloudflare
+
+The demo runs on Cloudflare Workers through the [OpenNext adapter](https://opennext.js.org/cloudflare). `npm run preview` runs the same build locally in the Workers runtime.
+
+1. `npx wrangler login`
+2. `npx wrangler kv namespace create PAINT_COUNTERS`, then put the id it prints in `wrangler.jsonc` (the counters for the paint limit).
+3. `npm run deploy` from a copy of the project **without `.env`**: OpenNext copies `.env` into the Worker it builds, and the key belongs in a secret, not in the code.
+4. Add the key as a secret: in the Cloudflare dashboard (the Worker's Settings, Variables and Secrets) or with `npx wrangler secret put OPENAI_API_KEY` in an interactive terminal.
+
+The limit only applies on Cloudflare: run locally with your own key, Skypost paints without one.
+
 ## What it does
 
 - **Search any city or town**, or start with a ready-made set: four time zones around the clock, four places called Paris, or four very different climates.
@@ -42,13 +55,15 @@ The key is read only on the server and never sent to the browser. Without a key,
 
 **Next.js + TypeScript.** One process, API routes keep the key on the server, and it is the stack I know best.
 
+**Hosting: Cloudflare Workers.** Free for a demo, close to visitors everywhere, and Workers KV holds the paint counters. Every painting costs money, so the public demo allows 10 per visitor per hour and 25 a day; past that, the page says when to try again.
+
 **Postcards.** The brief asks for four places and one picture made of four panels. A postcard gives every piece of data a natural home: the sky is the picture, the temperature is the stamp, the local time is the postmark, the details are the message. And the AI painting splits back into the four postcards.
 
 How it fits together:
 
 - The browser sends only the four place IDs to `/api/image`. The server looks up each place and its weather itself and builds the prompt, so every number in the prompt comes from the weather API and nothing can be injected from the browser.
 - Every outside answer is checked with zod. Every outside call has a timeout (8 s for Open-Meteo, 90 s for the image model), and Open-Meteo is tried again when it is busy.
-- No personal data is collected. The four places are saved only in the browser (localStorage), there are no accounts or cookies, and the fonts are served by the app itself, not by Google. Open-Meteo and OpenAI are called only from the server, so they never see the visitor's IP address.
+- No personal data is collected. The four places are saved only in the browser (localStorage), there are no accounts or cookies, and the fonts are served by the app itself, not by Google. Open-Meteo and OpenAI are called only from the server, so they never see the visitor's IP address. On the public demo, a one-way hash of the visitor's IP address is kept for at most two hours, only to count paintings.
 - Failures stay local: a place that does not exist, a card whose weather does not load (with Try again), an image model that times out, refuses or has no credit. Each shows a clear message, and the rest of the desk keeps working.
 - Motion is decorative and stops when it is off screen or when the system asks for reduced motion.
 
@@ -57,14 +72,14 @@ How it fits together:
 - The painting is not kept after a reload. Only the four places are.
 - The live sky shows a generic horizon, not the real place. The painting is where the place itself appears.
 - The prompt rules reduce the model's mistakes but do not remove them. For example, Cairo sometimes gets autumn leaves it would not have.
-- There is no limit on how often the picture can be painted, so anyone using a running copy can spend the key's credit.
+- The paint counters live in Workers KV, which is eventually consistent, so a quick burst can pass a limit by one or two paintings.
 
 ## With one more day
 
 In this order:
 
-1. **A rate limit on `/api/image`.** Every picture costs money, and anyone who can open a running copy can spend the key's credit.
-2. **End-to-end tests with Playwright, added to the CI:** search, paint and the failure messages, in a real browser. The current tests cover the logic and the API routes, not the page.
+1. **End-to-end tests with Playwright, added to the CI:** search, paint and the failure messages, in a real browser. The current tests cover the logic and the API routes, not the page.
+2. **Deploy from GitHub Actions** after the checks pass, so a local `.env` can never reach the build.
 3. **Weather cached on the server for a few minutes:** fewer calls to Open-Meteo and faster reloads.
 4. **Keep the last painting** after a reload.
 
@@ -91,7 +106,7 @@ What the image model got wrong, and how the prompt now constrains it. All of the
 - **Rain hardly visible, and wet streets under a dry night sky.** Rain and snow are described by what can be seen, and each panel states its ground (dry, wet, snow).
 - Two guards added before seeing the failure: no landmarks from other places with the same name (Paris, Texas got its water tower, not the Eiffel Tower), and no snow on the ground in a warm "winter".
 
-Problems caught by running the checks (the production build and real requests), not by reading the code: `next build` failed because the API routes read `request.url` inside a `try` block, which hid Next 16's "this route is dynamic" signal; Open-Meteo answers 429 "Too many concurrent requests" when four cards load at once, which is why it is now tried again; and a client component that read the clock during prerendering broke the build until the page waited for the saved places first.
+Problems caught by running the checks (the production build and real requests), not by reading the code: `next build` failed because the API routes read `request.url` inside a `try` block, which hid Next 16's "this route is dynamic" signal; Open-Meteo answers 429 "Too many concurrent requests" when four cards load at once, which is why it is now tried again; a client component that read the clock during prerendering broke the build until the page waited for the saved places first; and the first Cloudflare build carried the local `.env`, key included, inside the Worker, which is why the demo is deployed from a clean copy with the key as a secret.
 
 ---
 
