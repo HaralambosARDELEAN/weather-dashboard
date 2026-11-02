@@ -1,0 +1,29 @@
+// The public demo on Cloudflare Workers, built with OpenNext (`npm run deploy`).
+// Not needed to run Skypost locally: `npm run dev` ignores this file.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "skypost",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "skypost"
+    }
+  ],
+  // Counters that limit painting on the demo (lib/paint-limit.ts).
+  "kv_namespaces": [
+    {
+      "binding": "PAINT_COUNTERS",
+      "id": "18f05f1701e44d44b31cddfcccd4b0bd"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

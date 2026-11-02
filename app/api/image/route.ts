@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { paintCounters } from "@/lib/cloudflare";
 import { ApiError, errorResponse } from "@/lib/http";
 import { getPlace, getWeather } from "@/lib/open-meteo";
 import { generateImage } from "@/lib/openai-image";
+import { limitMessage, takePaint, visitorKey } from "@/lib/paint-limit";
 import { buildPrompt, type PromptEntry } from "@/lib/prompt";
 
 // The browser sends only place ids. Names, coordinates and weather are fetched here,
@@ -24,6 +26,14 @@ export async function POST(request: Request) {
   try {
     const body = bodySchema.safeParse(await request.json().catch(() => null));
     if (!body.success) throw new ApiError("Add four places before generating the picture.", 400);
+
+    // On the public demo every painting costs the owner money, so each visitor and each day get a few.
+    const counters = paintCounters();
+    if (counters) {
+      const visitor = await visitorKey(request.headers.get("cf-connecting-ip") ?? "unknown");
+      const verdict = await takePaint(counters, visitor, Date.now());
+      if (!verdict.ok) throw new ApiError(limitMessage(verdict), 429);
+    }
 
     const entries = await Promise.all(body.data.placeIds.map(loadEntry));
     prompt = buildPrompt(entries);
