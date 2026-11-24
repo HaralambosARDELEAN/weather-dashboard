@@ -33,7 +33,7 @@ The demo runs on Cloudflare Workers through the [OpenNext adapter](https://openn
 
 1. `npx wrangler login`
 2. `npx wrangler kv namespace create PAINT_COUNTERS`, then put the id it prints in `wrangler.jsonc` (the counters for the paint limit).
-3. `npm run deploy` from a copy of the project **without `.env`**: OpenNext copies `.env` into the Worker it builds, and the key belongs in a secret, not in the code.
+3. `npm run deploy` from a copy of the project **without `.env`**: OpenNext copies `.env` into the Worker it builds, and the key belongs in a secret, not in the code. The deploy script stops by itself if it finds a `.env` file.
 4. Add the key as a secret: in the Cloudflare dashboard (the Worker's Settings, Variables and Secrets) or with `npx wrangler secret put OPENAI_API_KEY` in an interactive terminal.
 
 The limit only applies on Cloudflare: run locally with your own key, Skypost paints without one.
@@ -55,7 +55,7 @@ The limit only applies on Cloudflare: run locally with your own key, Skypost pai
 
 **Next.js + TypeScript.** One process, API routes keep the key on the server, and it is the stack I know best.
 
-**Hosting: Cloudflare Workers.** Free for a demo, close to visitors everywhere, and Workers KV holds the paint counters. Every painting costs money, so the public demo allows 10 per visitor per hour and 25 a day; past that, the page says when to try again.
+**Hosting: Cloudflare Workers.** Free for a demo, close to visitors everywhere, and Workers KV holds the paint counters. Every painting costs money, so the public demo allows 10 per visitor per hour and 25 a day; past that, the page says when to try again. A painting is counted only just before the call to OpenAI, so a request with made-up places uses up nothing. The hard cap on spending is the budget on the OpenAI account, because the KV counters are not exact.
 
 **Postcards.** The brief asks for four places and one picture made of four panels. A postcard gives every piece of data a natural home: the sky is the picture, the temperature is the stamp, the local time is the postmark, the details are the message. And the AI painting splits back into the four postcards.
 
@@ -63,7 +63,8 @@ How it fits together:
 
 - The browser sends only the four place IDs to `/api/image`. The server looks up each place and its weather itself and builds the prompt, so every number in the prompt comes from the weather API and nothing can be injected from the browser.
 - Every outside answer is checked with zod. Every outside call has a timeout (8 s for Open-Meteo, 90 s for the image model), and Open-Meteo is tried again when it is busy.
-- No personal data is collected. The four places are saved only in the browser (localStorage), there are no accounts or cookies, and the fonts are served by the app itself, not by Google. Open-Meteo and OpenAI are called only from the server, so they never see the visitor's IP address. On the public demo, a one-way hash of the visitor's IP address is kept for at most two hours, only to count paintings.
+- Privacy: there are no accounts, cookies or tracking. The four places are saved only in the browser (localStorage), and the fonts are served by the app itself, not by Google. Open-Meteo and OpenAI are called only from the server, so they never see the visitor's IP address. On the public demo, Cloudflare (the host) sees visitor IP addresses; the app keeps only a one-way hash of the visitor's network (the IPv4 address, or the /64 of an IPv6 one) until the end of the clock hour, to count paintings. That hash is still pseudonymised personal data. The Worker keeps error logs, not per-request logs.
+- Security: the paint route accepts only JSON sent by the app's own page (other sites' pages are refused through `Sec-Fetch-Site`), each visitor may call the API 60 times a minute on the demo, and every answer carries security headers (Content-Security-Policy with `frame-ancestors 'none'`, `nosniff`, Referrer-Policy, HSTS). OpenAI's own error wording stays in the server log. A security review of the demo found no high-severity issue, and its findings are fixed.
 - Failures stay local: a place that does not exist, a card whose weather does not load (with Try again), an image model that times out, refuses or has no credit. Each shows a clear message, and the rest of the desk keeps working.
 - Motion is decorative and stops when it is off screen or when the system asks for reduced motion.
 
@@ -72,7 +73,8 @@ How it fits together:
 - The painting is not kept after a reload. Only the four places are.
 - The live sky shows a generic horizon, not the real place. The painting is where the place itself appears.
 - The prompt rules reduce the model's mistakes but do not remove them. For example, Cairo sometimes gets autumn leaves it would not have.
-- The paint counters live in Workers KV, which is eventually consistent, so a quick burst can pass a limit by one or two paintings.
+- The paint counters live in Workers KV, which is neither atomic nor instant across Cloudflare's locations, so a deliberate burst of parallel requests can pass a limit by a few paintings. Exact counting would need a Durable Object.
+- The Content-Security-Policy allows inline scripts, because Next.js puts small inline scripts in the prerendered page and a nonce would make the page dynamic.
 
 ## With one more day
 
@@ -106,7 +108,7 @@ What the image model got wrong, and how the prompt now constrains it. All of the
 - **Rain hardly visible, and wet streets under a dry night sky.** Rain and snow are described by what can be seen, and each panel states its ground (dry, wet, snow).
 - Two guards added before seeing the failure: no landmarks from other places with the same name (Paris, Texas got its water tower, not the Eiffel Tower), and no snow on the ground in a warm "winter".
 
-Problems caught by running the checks (the production build and real requests), not by reading the code: `next build` failed because the API routes read `request.url` inside a `try` block, which hid Next 16's "this route is dynamic" signal; Open-Meteo answers 429 "Too many concurrent requests" when four cards load at once, which is why it is now tried again; a client component that read the clock during prerendering broke the build until the page waited for the saved places first; and the first Cloudflare build carried the local `.env`, key included, inside the Worker, which is why the demo is deployed from a clean copy with the key as a secret.
+Problems caught by running the checks (the production build and real requests), not by reading the code: `next build` failed because the API routes read `request.url` inside a `try` block, which hid Next 16's "this route is dynamic" signal; Open-Meteo answers 429 "Too many concurrent requests" when four cards load at once, which is why it is now tried again; a client component that read the clock during prerendering broke the build until the page waited for the saved places first; the first Cloudflare build carried the local `.env`, key included, inside the Worker, which is why the demo is deployed from a clean copy with the key as a secret; and before the interview I had the deployed demo reviewed for security, which found that made-up place ids could use up the day's paintings, that the deploy had no guard against `.env`, and that the site sent no security headers. All of these are fixed, and Next.js was updated to 16.4.6 after its build started refusing the older version.
 
 ---
 
