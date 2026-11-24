@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError, errorResponse } from "@/lib/http";
+import { limitRequests } from "@/lib/request-guard";
 import { searchPlaces } from "@/lib/open-meteo";
 
 const querySchema = z.string().trim().min(2).max(100);
@@ -9,6 +10,7 @@ export async function GET(request: Request) {
   // by throwing here during the build, and that signal must not be caught.
   const query = querySchema.safeParse(new URL(request.url).searchParams.get("q") ?? "");
   try {
+    await limitRequests(request);
     if (!query.success) throw new ApiError("Type at least 2 characters to search.", 400);
 
     const results = await searchPlaces(query.data);

@@ -3,7 +3,7 @@ import { POST } from "@/app/api/image/route";
 import { forecast, geoResult, json, mockFetch, timeoutError } from "../helpers";
 
 const call = (body: unknown) =>
-  POST(new Request("http://localhost/api/image", { method: "POST", body: JSON.stringify(body) }));
+  POST(new Request("http://localhost/api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
 
 const ids = { placeIds: [1, 2, 3, 4] };
 const image = () => json({ data: [{ b64_json: "aGVsbG8=" }] });
@@ -103,5 +103,39 @@ describe("POST /api/image", () => {
 
     services(() => json({ error: { message: "slow down", code: "rate_limit_exceeded" } }, 429));
     expect((await call(ids)).status).toBe(429);
+  });
+
+  it("keeps the details of other OpenAI errors in the server log", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    services(() => json({ error: { message: "Project proj_123 has no access to this model", code: "model_not_found" } }, 404));
+    const response = await call(ids);
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    expect(body.error).toBe("The image model returned an error. Try again.");
+    expect(JSON.stringify(body)).not.toContain("proj_123");
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it("accepts only JSON", async () => {
+    const fake = services(image);
+    const response = await POST(
+      new Request("http://localhost/api/image", { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(ids) }),
+    );
+    expect(response.status).toBe(415);
+    expect(fake).not.toHaveBeenCalled();
+  });
+
+  it("refuses a request that another site's page sent through the visitor's browser", async () => {
+    const fake = services(image);
+    const response = await POST(
+      new Request("http://localhost/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Sec-Fetch-Site": "cross-site" },
+        body: JSON.stringify(ids),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(fake).not.toHaveBeenCalled();
   });
 });

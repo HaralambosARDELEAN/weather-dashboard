@@ -5,6 +5,7 @@ import { getPlace, getWeather } from "@/lib/open-meteo";
 import { generateImage } from "@/lib/openai-image";
 import { limitMessage, takePaint, visitorKey } from "@/lib/paint-limit";
 import { buildPrompt, type PromptEntry } from "@/lib/prompt";
+import { assertOwnPage, clientIp, limitRequests } from "@/lib/request-guard";
 
 // The browser sends only place ids. Names, coordinates and weather are fetched here,
 // so every number in the prompt comes from the weather API and nothing else.
@@ -24,19 +25,22 @@ async function loadEntry(id: number, slot: number): Promise<PromptEntry> {
 export async function POST(request: Request) {
   let prompt: string | undefined;
   try {
+    assertOwnPage(request);
+    await limitRequests(request);
     const body = bodySchema.safeParse(await request.json().catch(() => null));
     if (!body.success) throw new ApiError("Add four places before generating the picture.", 400);
 
+    const entries = await Promise.all(body.data.placeIds.map(loadEntry));
+    prompt = buildPrompt(entries);
+
     // On the public demo every painting costs the owner money, so each visitor and each day get a few.
+    // Counted only now, just before the paid call, so a request with made-up places uses up nothing.
     const counters = paintCounters();
     if (counters) {
-      const visitor = await visitorKey(request.headers.get("cf-connecting-ip") ?? "unknown");
-      const verdict = await takePaint(counters, visitor, Date.now());
+      const verdict = await takePaint(counters, await visitorKey(clientIp(request)), Date.now());
       if (!verdict.ok) throw new ApiError(limitMessage(verdict), 429);
     }
 
-    const entries = await Promise.all(body.data.placeIds.map(loadEntry));
-    prompt = buildPrompt(entries);
     const image = await generateImage(prompt);
     return Response.json({ image, prompt });
   } catch (error) {

@@ -13,9 +13,23 @@ export type PaintVerdict = { ok: true } | { ok: false; scope: "visitor" | "day";
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
-/** A one-way hash of the visitor's IP address, so the address itself is never stored. */
+/**
+ * The part of an address that stands for one visitor: a whole IPv4 address, or the /64 network of an IPv6 one.
+ * A home or a phone gets a whole /64, so counting each IPv6 address apart would give one visitor endless paintings.
+ */
+export function visitorNetwork(ip: string): string {
+  if (!ip.includes(":")) return ip;
+  if (ip.includes(".")) return ip.slice(ip.lastIndexOf(":") + 1); // IPv4 written as IPv6 (::ffff:1.2.3.4)
+  const [head, tail] = ip.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = tail === undefined ? left : [...left, ...Array(8 - left.length - right.length).fill("0"), ...right];
+  return `${groups.slice(0, 4).map((group) => group.toLowerCase().padStart(4, "0")).join(":")}::/64`;
+}
+
+/** A one-way hash of the visitor's network, so the address itself is never stored. */
 export async function visitorKey(ip: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(visitorNetwork(ip)));
   return Array.from(new Uint8Array(digest).slice(0, 12), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -25,8 +39,8 @@ async function count(store: CounterStore, key: string): Promise<number> {
 
 /**
  * Takes one painting from the visitor's allowance for this clock hour and from the demo's for this UTC day,
- * or says which one is used up and when it renews. KV is eventually consistent, so a burst can pass a limit
- * by one or two: fine for a guard on cost.
+ * or says which one is used up and when it renews. KV is neither atomic nor instant across locations, so a burst
+ * of parallel requests can pass a limit: this guards cost, and the hard cap is the budget on the OpenAI account.
  */
 export async function takePaint(store: CounterStore, visitor: string, now: number): Promise<PaintVerdict> {
   const hour = Math.floor(now / HOUR);
@@ -41,10 +55,11 @@ export async function takePaint(store: CounterStore, visitor: string, now: numbe
   if (used >= PAINT_LIMITS.perVisitorPerHour) {
     return { ok: false, scope: "visitor", retryAfterSeconds: Math.ceil(((hour + 1) * HOUR - now) / 1000) };
   }
-  // The counters outlive their window a little, then KV deletes them.
+  // Each counter lives until the end of its window plus a minute, then KV deletes it (KV's shortest TTL is 60 s).
+  const untilEnd = (end: number) => Math.max(60, Math.ceil((end - now) / 1000) + 60);
   await Promise.all([
-    store.put(visitorCounter, String(used + 1), { expirationTtl: 2 * 60 * 60 }),
-    store.put(dayCounter, String(usedToday + 1), { expirationTtl: 2 * 24 * 60 * 60 }),
+    store.put(visitorCounter, String(used + 1), { expirationTtl: untilEnd((hour + 1) * HOUR) }),
+    store.put(dayCounter, String(usedToday + 1), { expirationTtl: untilEnd((day + 1) * DAY) }),
   ]);
   return { ok: true };
 }

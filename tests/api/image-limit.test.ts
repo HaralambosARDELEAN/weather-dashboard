@@ -12,13 +12,13 @@ const counters = vi.hoisted(() => {
     put: async (key: string, value: string) => void values.set(key, value),
   };
 });
-vi.mock("@/lib/cloudflare", () => ({ paintCounters: () => counters }));
+vi.mock("@/lib/cloudflare", () => ({ paintCounters: () => counters, apiLimiter: () => null }));
 
 const call = (ip: string) =>
   POST(
     new Request("http://localhost/api/image", {
       method: "POST",
-      headers: { "cf-connecting-ip": ip },
+      headers: { "cf-connecting-ip": ip, "Content-Type": "application/json" },
       body: JSON.stringify({ placeIds: [1, 2, 3, 4] }),
     }),
   );
@@ -52,6 +52,12 @@ describe("POST /api/image on the public demo", () => {
     expect(refused.status).toBe(429);
     await expect(refused.json()).resolves.toMatchObject({ error: expect.stringContaining("per visitor per hour") });
     expect(fake.mock.calls.filter(([url]) => isOpenAI(String(url)))).toHaveLength(PAINT_LIMITS.perVisitorPerHour);
+  });
+
+  it("does not use the allowance when a place cannot be loaded", async () => {
+    mockFetch((url) => (url.includes("/v1/get") ? json({ reason: "Not found" }, 404) : json(forecast())));
+    expect((await call("203.0.113.7")).status).not.toBe(200);
+    expect(counters.values.size).toBe(0);
   });
 
   it("counts another visitor apart", async () => {

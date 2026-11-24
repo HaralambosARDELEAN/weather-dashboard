@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError, errorResponse } from "@/lib/http";
+import { limitRequests } from "@/lib/request-guard";
 import { getWeather } from "@/lib/open-meteo";
 
 const querySchema = z.object({
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
   // by throwing here during the build, and that signal must not be caught.
   const query = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   try {
+    await limitRequests(request);
     if (!query.success) throw new ApiError("The place in the request is not valid.", 400);
 
     const { lat, lon, tz } = query.data;

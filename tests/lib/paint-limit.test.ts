@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PAINT_LIMITS, limitMessage, takePaint, visitorKey, type CounterStore } from "@/lib/paint-limit";
+import { PAINT_LIMITS, limitMessage, takePaint, visitorKey, visitorNetwork, type CounterStore } from "@/lib/paint-limit";
 
 /** Workers KV as a Map: enough for counters (expiry is not needed within one test). */
 function memoryStore(): CounterStore & { keys: () => string[] } {
@@ -39,6 +39,15 @@ describe("takePaint", () => {
     expect(await takePaint(store, "new", NOW)).toEqual({ ok: false, scope: "day", retryAfterSeconds: (13 * 60 + 45) * 60 });
   });
 
+  it("keeps each counter only until the end of its window, plus a minute", async () => {
+    const ttls = new Map<string, number>();
+    const store: CounterStore = { get: async () => null, put: async (key, _value, options) => void ttls.set(key, options.expirationTtl) };
+    await takePaint(store, "a", NOW);
+    const ttlOf = (part: string) => [...ttls].find(([key]) => key.includes(part))?.[1];
+    expect(ttlOf(":visitor:")).toBe(45 * 60 + 60);
+    expect(ttlOf(":day:")).toBe((13 * 60 + 45) * 60 + 60);
+  });
+
   it("does not count a refused painting", async () => {
     const store = memoryStore();
     for (let i = 0; i < PAINT_LIMITS.perVisitorPerHour + 2; i++) await takePaint(store, "a", NOW);
@@ -56,6 +65,21 @@ describe("visitorKey", () => {
     const store = memoryStore();
     await takePaint(store, key, NOW);
     expect(store.keys().join(" ")).not.toContain("203.0.113.7");
+  });
+});
+
+describe("visitorNetwork", () => {
+  it("keeps an IPv4 address whole and an IPv6 address to its /64 network", () => {
+    expect(visitorNetwork("203.0.113.7")).toBe("203.0.113.7");
+    expect(visitorNetwork("2001:db8:1:2:aaaa::1")).toBe("2001:0db8:0001:0002::/64");
+    expect(visitorNetwork("2001:DB8:1:2:ffff:1:2:3")).toBe("2001:0db8:0001:0002::/64");
+    expect(visitorNetwork("2001:db8::1")).toBe("2001:0db8:0000:0000::/64");
+    expect(visitorNetwork("::ffff:203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("gives every address of one IPv6 network the same visitor key", async () => {
+    expect(await visitorKey("2001:db8:1:2::1")).toBe(await visitorKey("2001:db8:1:2:9:9:9:9"));
+    expect(await visitorKey("2001:db8:1:2::1")).not.toBe(await visitorKey("2001:db8:1:3::1"));
   });
 });
 

@@ -49,8 +49,7 @@ function toApiError(status: number, body: unknown): ApiError {
   if (status === 401) return new ApiError("OpenAI rejected the API key. Check OPENAI_API_KEY in the .env file.", 500);
   if (code === "insufficient_quota") return new ApiError("The OpenAI account has no credit left. Add credit and try again.", 429);
   if (status === 429) return new ApiError("The image model is busy right now. Wait a minute and try again.", 429);
-  return new ApiError(
-    detail ? `The image model returned an error: ${detail}` : "The image model returned an error. Try again.",
-    502,
-  );
+  // OpenAI's own wording can name the account, its project or its billing state: the log keeps it, the page does not.
+  if (detail) console.error(`OpenAI image error (${status}):`, detail);
+  return new ApiError("The image model returned an error. Try again.", 502);
 }
